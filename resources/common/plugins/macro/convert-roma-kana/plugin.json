@@ -1,0 +1,72 @@
+{
+  "name": "convert-roma-kana",
+  "version": 1,
+  "type": "macro",
+  "displayedName": {
+      "en": "Convert Romaji/Hiragana",
+      "zh": "",
+      "ja": ""
+  },
+  "author": "KLAD",
+  "email": "adlez.dysto@gmail.com",
+  "description": {
+      "en": "Convert selected entry names between romaji/hiragana",
+      "zh": "",
+      "ja": ""
+  },
+  "website": "https://klad.tubs.wtf",
+  "supportedLabelFileExtension": "*",
+  "parameters": {
+      "list": [
+          {
+              "type": "entrySelector",
+              "name": "selector",
+              "label": {
+                  "en": "Entry filters",
+                  "zh": "条目筛选器",
+                  "ja": "エントリフィルター"
+              },
+              "description": {
+                  "en": "Add filters to select the entries to edit. Leave blank to edit all entries.",
+                  "zh": "添加筛选器以选择要编辑的条目。留空以编辑所有条目。",
+                  "ja": "編集するエントリを選択するフィルターを追加してください。空にしておくことで、すべてのエントリを編集できます。"
+              },
+              "defaultValue": {
+                  "filters": []
+              }
+          },
+          {
+            "type": "enum",
+            "name": "target",
+            "label": {
+                "en": "Convert to",
+                "zh": "",
+                "ja": ""
+            },
+            "defaultValue": "hiragana",
+            "options": [
+                "hiragana",
+                "romaji"
+            ],
+            "optionDisplayedNames": [
+                {
+                    "en": "Hiragana",
+                    "zh": "",
+                    "jp": "ひらがな"
+                },
+                {
+                    "en": "Romaji",
+                    "zh": "",
+                    "jp": "ローマ字"
+                }
+            ]
+        }
+      ]
+  },
+  "scriptFiles": [
+    "convert-roma-kana.js"
+  ],
+  "resourceFiles": [
+    "wanakana.js"
+  ]
+}
