@@ -55,10 +55,9 @@ suspend fun loadSampleChunk(
         val isBigEndian = stream.format.isBigEndian
         val channels = List(channelCount) { mutableListOf<Float>() }
         val buffer = ByteArray(chunkSize * frameSize)
-        stream.skipNBytes(offset * frameSize)
+        stream.skip(offset * frameSize)
         Log.debug("Loading chunk $chunkIndex: offset=$offset")
         val readSize = stream.readNBytes(buffer, 0, chunkSize * frameSize)
-        yield()
         val readFrameCount = readSize / frameSize
         for (frameIndex in 0 until readFrameCount) {
             val frameStart = frameIndex * frameSize
@@ -87,12 +86,16 @@ suspend fun loadSampleChunk(
         val power = if (appConf.painter.power.enabled) {
             wave.toPower(appConf.painter.power)
         } else null
+        val fundamental = if (appConf.painter.fundamental.enabled) {
+            wave.toFundamental(appConf.painter.fundamental, sampleInfo.sampleRate)
+        } else null
         SampleChunk(
             info = sampleInfo,
             index = chunkIndex,
             wave = wave,
             spectrogram = spectrogram,
             power = power,
+            fundamental = fundamental,
         )
     }.onFailure {
         if (it is CancellationException) {

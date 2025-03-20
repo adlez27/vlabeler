@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import com.sdercolin.vlabeler.env.Log
 import com.sdercolin.vlabeler.io.loadProject
 import com.sdercolin.vlabeler.model.AppConf
+import com.sdercolin.vlabeler.model.LabelerConf
 import com.sdercolin.vlabeler.model.Plugin
 import com.sdercolin.vlabeler.repository.update.model.Update
 import com.sdercolin.vlabeler.ui.dialog.AskIfSaveDialogPurpose
@@ -22,6 +23,7 @@ import com.sdercolin.vlabeler.ui.dialog.InputEntryNameDialogPurpose
 import com.sdercolin.vlabeler.ui.dialog.JumpToEntryDialogArgs
 import com.sdercolin.vlabeler.ui.dialog.JumpToModuleDialogArgs
 import com.sdercolin.vlabeler.ui.dialog.MoveEntryDialogArgs
+import com.sdercolin.vlabeler.ui.dialog.ReloadLabelDialogArgs
 import com.sdercolin.vlabeler.ui.dialog.customization.CustomizableItem
 import com.sdercolin.vlabeler.ui.dialog.customization.CustomizableItemManagerDialogState
 import com.sdercolin.vlabeler.ui.dialog.importentries.ImportEntriesDialogArgs
@@ -59,8 +61,11 @@ interface AppDialogState {
     val isShowingLicenseDialog: Boolean
     val isShowingQuickLaunchManagerDialog: Boolean
     val isShowingTrackingSettingsDialog: Boolean
+    val isShowingFileNameNormalizerDialog: Boolean
+    val quickEditArgs: Pair<LabelerConf, LabelerConf.QuickProjectBuilder>?
     val updaterDialogContent: Update?
     val importEntriesDialogArgs: ImportEntriesDialogArgs?
+    val reloadLabelDialogArgs: ReloadLabelDialogArgs?
     val macroPluginShownInDialog: MacroPluginDialogArgs?
     val macroPluginReport: LocalizedJsonString?
     val customizableItemManagerTypeShownInDialog: CustomizableItem.Type?
@@ -132,6 +137,12 @@ interface AppDialogState {
     fun toggleVideoPopup(on: Boolean)
     fun openImportEntriesDialog(args: ImportEntriesDialogArgs)
     fun closeImportEntriesDialog()
+    fun openReloadLabelDialog(args: ReloadLabelDialogArgs)
+    fun closeReloadLabelDialog()
+    fun openFileNameNormalizerDialog()
+    fun closeFileNameNormalizerDialog()
+    fun openQuickEditFileDialog(quickEditArgs: Pair<LabelerConf, LabelerConf.QuickProjectBuilder>)
+    fun closeQuickEditFileDialog()
     fun closeEmbeddedDialog()
     fun closeAllDialogs()
 
@@ -154,6 +165,8 @@ interface AppDialogState {
             isShowingLicenseDialog ||
             isShowingQuickLaunchManagerDialog ||
             isShowingTrackingSettingsDialog ||
+            isShowingFileNameNormalizerDialog ||
+            quickEditArgs != null ||
             updaterDialogContent != null ||
             importEntriesDialogArgs != null ||
             macroPluginShownInDialog != null ||
@@ -190,9 +203,12 @@ class AppDialogStateImpl(
     override var isShowingLicenseDialog: Boolean by mutableStateOf(false)
     override var isShowingQuickLaunchManagerDialog: Boolean by mutableStateOf(false)
     override var isShowingTrackingSettingsDialog: Boolean by mutableStateOf(false)
+    override var quickEditArgs: Pair<LabelerConf, LabelerConf.QuickProjectBuilder>? by mutableStateOf(null)
+    override var isShowingFileNameNormalizerDialog: Boolean by mutableStateOf(false)
     override var isShowingVideo: Boolean by mutableStateOf(false)
     override var updaterDialogContent: Update? by mutableStateOf(null)
     override var importEntriesDialogArgs: ImportEntriesDialogArgs? by mutableStateOf(null)
+    override var reloadLabelDialogArgs: ReloadLabelDialogArgs? by mutableStateOf(null)
     override var macroPluginShownInDialog: MacroPluginDialogArgs? by mutableStateOf(null)
     override var macroPluginReport: LocalizedJsonString? by mutableStateOf(null)
     override var customizableItemManagerTypeShownInDialog: CustomizableItem.Type? by mutableStateOf(null)
@@ -547,6 +563,30 @@ class AppDialogStateImpl(
 
     override fun closeImportEntriesDialog() {
         importEntriesDialogArgs = null
+    }
+
+    override fun openReloadLabelDialog(args: ReloadLabelDialogArgs) {
+        reloadLabelDialogArgs = args
+    }
+
+    override fun closeReloadLabelDialog() {
+        reloadLabelDialogArgs = null
+    }
+
+    override fun openFileNameNormalizerDialog() {
+        isShowingFileNameNormalizerDialog = true
+    }
+
+    override fun closeFileNameNormalizerDialog() {
+        isShowingFileNameNormalizerDialog = false
+    }
+
+    override fun openQuickEditFileDialog(quickEditArgs: Pair<LabelerConf, LabelerConf.QuickProjectBuilder>) {
+        this.quickEditArgs = quickEditArgs
+    }
+
+    override fun closeQuickEditFileDialog() {
+        this.quickEditArgs = null
     }
 
     override fun closeEmbeddedDialog() {

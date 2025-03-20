@@ -137,12 +137,14 @@ class MarkerState(
         return if (!forcedDrag) {
             val dxMin = leftBorder - minPixel
             val dxMax = (rightBorder - maxPixel - 1).coerceAtLeast(0f)
+            if (dxMax <= dxMin) return entriesInPixel
             val dx = (x - getPointPosition(pointIndex)).coerceIn(dxMin, dxMax)
             entriesInPixel.map { it.moved(dx).validateImplicit(labelerConf) }
         } else {
             val currentX = getPointPosition(pointIndex)
             val dxMin = leftBorder - currentX
             val dxMax = (rightBorder - currentX - 1).coerceAtLeast(0f)
+            if (dxMax <= dxMin) return entriesInPixel
             val dx = (x - getPointPosition(pointIndex)).coerceIn(dxMin, dxMax)
             entriesInPixel.map { it.moved(dx).collapsed(leftBorder, rightBorder).validateImplicit(labelerConf) }
         }
@@ -486,7 +488,7 @@ class MarkerState(
         get() = scissorsState.value == null && panState.value == null && playbackState.value == null
 
     fun switchTool(tool: Tool) {
-        Tool.values().forEach {
+        Tool.entries.forEach {
             if (it == tool) {
                 createToolStateIfNeeded(it)
             } else {

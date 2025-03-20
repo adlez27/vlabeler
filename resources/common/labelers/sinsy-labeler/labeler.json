@@ -1,6 +1,6 @@
 {
     "name": "sinsy.default",
-    "version": 13,
+    "version": 17,
     "serialVersion": 2,
     "singleFile": false,
     "extension": "lab",
@@ -8,14 +8,16 @@
     "displayedName": {
         "en": "Sinsy lab labeler",
         "zh": "Sinsy lab 标注器",
-        "ja": "Sinsy lab ラベラー"
+        "ja": "Sinsy lab ラベラー",
+        "ko": "Sinsy lab 라벨러"
     },
     "author": "sdercolin",
     "email": "sder.colin@gmail.com",
     "description": {
         "en": "Default labeler for lab file in Sinsy's standard.",
         "zh": "用于 Sinsy 规范的 lab 文件的默认标注器。",
-        "ja": "Sinsy の標準の lab ファイルのデフォルトラベラーです。"
+        "ja": "Sinsy の標準の lab ファイルのデフォルトラベラーです。",
+        "ko": "기본 내장된 Sinsy 표준 lab용 라벨러에요."
     },
     "website": "https://github.com/sdercolin/vlabeler/tree/main/resources/common/labelers",
     "continuous": true,
@@ -31,6 +33,16 @@
         "useStart": false
     },
     "decimalDigit": 4,
+    "entrySimilarityWeights": {
+        "name": 0,
+        "sample": 0.5,
+        "start": 0.25,
+        "end": 0.25,
+        "points": [],
+        "extras": [],
+        "tag": 0,
+        "threshold": 0.75
+    },
     "properties": [
         {
             "name": "start",
@@ -69,5 +81,23 @@
     "writer": {
         "scope": "Entry",
         "scripts": "writer.js"
-    }
+    },
+    "parameters": [
+        {
+            "parameter": {
+                "name": "defaultEntryName",
+                "type": "string",
+                "label": {
+                    "en": "Default entry name",
+                    "zh": "默认条目名称",
+                    "ja": "デフォルトエントリ名",
+                    "ko": "기본 엔트리 이름"
+                },
+                "defaultValue": "pau",
+                "optional": true
+            },
+            "injector": "defaultEntryName-injector.js",
+            "changeable": true
+        }
+    ]
 }

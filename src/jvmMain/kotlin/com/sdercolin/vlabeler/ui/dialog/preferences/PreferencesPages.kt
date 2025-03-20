@@ -27,6 +27,7 @@ object PreferencesPages {
                 ChartsWaveform,
                 ChartsSpectrogram,
                 ChartsPower,
+                ChartsFundamental,
                 ChartsConversion,
             )
     }
@@ -202,7 +203,7 @@ object PreferencesPages {
                         defaultValue = AppConf.Spectrogram.DEFAULT_WINDOW_TYPE,
                         select = { it.windowType },
                         update = { copy(windowType = it) },
-                        options = AppConf.WindowType.values(),
+                        options = AppConf.WindowType.entries.toTypedArray(),
                     )
                     integer(
                         title = Strings.PreferencesChartsSpectrogramMelScaleStep,
@@ -394,6 +395,125 @@ object PreferencesPages {
             }
     }
 
+    object ChartsFundamental : PreferencesPage(
+        Strings.PreferencesChartsFundamental,
+        Strings.PreferencesChartsFundamentalDescription,
+    ) {
+        override val content: List<PreferencesGroup>
+            get() = buildPageContent {
+                withContext(
+                    selector = { it.painter.fundamental },
+                    updater = { copy(painter = painter.copy(fundamental = it)) },
+                ) {
+                    switch(
+                        title = Strings.PreferencesChartsFundamentalEnabled,
+                        defaultValue = AppConf.Fundamental.DEFAULT_ENABLED,
+                        select = { it.enabled },
+                        update = { copy(enabled = it) },
+                    )
+                    floatPercentage(
+                        title = Strings.PreferencesChartsFundamentalHeight,
+                        defaultValue = AppConf.Fundamental.DEFAULT_HEIGHT_WEIGHT,
+                        min = AppConf.Fundamental.MIN_HEIGHT_WEIGHT,
+                        max = AppConf.Fundamental.MAX_HEIGHT_WEIGHT,
+                        select = { it.heightWeight },
+                        update = { copy(heightWeight = it) },
+                    )
+                    integer(
+                        title = Strings.PreferencesChartsFundamentalSemitoneResolution,
+                        defaultValue = AppConf.Fundamental.DEFAULT_SEMITONE_RESOLUTION,
+                        min = AppConf.Fundamental.MIN_SEMITONE_RESOLUTION,
+                        max = AppConf.Fundamental.MAX_SEMITONE_RESOLUTION,
+                        select = { it.semitoneResolution },
+                        update = { copy(semitoneResolution = it) },
+                    )
+                    float(
+                        title = Strings.PreferencesChartsFundamentalMinFundamental,
+                        defaultValue = AppConf.Fundamental.DEFAULT_MIN_FUNDAMENTAL,
+                        min = AppConf.Fundamental.MIN_FUNDAMENTAL,
+                        max = AppConf.Fundamental.MAX_FUNDAMENTAL,
+                        select = { it.minFundamental },
+                        update = { copy(minFundamental = it) },
+                        validationRules = listOf(
+                            PreferencesItemValidationRule(
+                                validate = { appConf ->
+                                    appConf.painter.fundamental.let { it.minFundamental < it.maxFundamental }
+                                },
+                                prompt = Strings.PreferencesChartsFundamentalMinFundamentalInvalid,
+                            ),
+                        ),
+                    )
+                    float(
+                        title = Strings.PreferencesChartsFundamentalMaxFundamental,
+                        defaultValue = AppConf.Fundamental.DEFAULT_MAX_FUNDAMENTAL,
+                        min = AppConf.Fundamental.MIN_FUNDAMENTAL,
+                        max = AppConf.Fundamental.MAX_FUNDAMENTAL,
+                        select = { it.maxFundamental },
+                        update = { copy(maxFundamental = it) },
+                        validationRules = listOf(
+                            PreferencesItemValidationRule(
+                                validate = { appConf ->
+                                    appConf.painter.fundamental.let { it.minFundamental < it.maxFundamental }
+                                },
+                                prompt = Strings.PreferencesChartsFundamentalMaxFundamentalInvalid,
+                            ),
+                        ),
+                    )
+                    integer(
+                        title = Strings.PreferencesChartsFundamentalSemitoneSampleNum,
+                        defaultValue = AppConf.Fundamental.DEFAULT_SEMITONE_SAMPLE_NUM,
+                        min = 1,
+                        max = AppConf.Fundamental.MAX_SEMITONE_SAMPLE_NUM,
+                        select = { it.semitoneSampleNum },
+                        update = { copy(semitoneSampleNum = it) },
+                    )
+                    float(
+                        title = Strings.PreferencesChartsFundamentalMaxHarmonicFrequency,
+                        defaultValue = AppConf.Fundamental.DEFAULT_MAX_HARMONIC_FREQUENCY,
+                        max = AppConf.Fundamental.MAX_MAX_HARMONIC_FREQUENCY,
+                        select = { it.maxHarmonicFrequency },
+                        update = { copy(maxHarmonicFrequency = it) },
+                        validationRules = listOf(
+                            PreferencesItemValidationRule(
+                                validate = { appConf ->
+                                    appConf.painter.fundamental.let { it.maxHarmonicFrequency >= it.maxFundamental }
+                                },
+                                prompt = Strings.PreferencesChartsFundamentalMaxHarmonicFrequencyInvalid,
+                            ),
+                        ),
+                    )
+                    color(
+                        title = Strings.PreferencesChartsFundamentalColor,
+                        defaultValue = AppConf.Fundamental.DEFAULT_COLOR,
+                        select = { it.color },
+                        update = { copy(color = it) },
+                        useAlpha = true,
+                    )
+                    switch(
+                        title = Strings.PreferencesChartsFundamentalDrawReferenceLine,
+                        defaultValue = AppConf.Fundamental.DEFAULT_DRAW_REFERENCE_LINE,
+                        select = { it.drawReferenceLine },
+                        update = { copy(drawReferenceLine = it) },
+                    )
+                    color(
+                        title = Strings.PreferencesChartsFundamentalReferenceLineColor,
+                        defaultValue = AppConf.Fundamental.DEFAULT_REFERENCE_LINE_COLOR,
+                        select = { it.referenceLineColor },
+                        update = { copy(referenceLineColor = it) },
+                        useAlpha = true,
+                        enabled = { it.drawReferenceLine },
+                    )
+                    color(
+                        title = Strings.PreferencesChartsFundamentalBackgroundColor,
+                        defaultValue = AppConf.Fundamental.DEFAULT_BACKGROUND_COLOR,
+                        select = { it.backgroundColor },
+                        update = { copy(backgroundColor = it) },
+                        useAlpha = true,
+                    )
+                }
+            }
+    }
+
     object ChartsConversion : PreferencesPage(
         Strings.PreferencesChartsConversion,
         Strings.PreferencesChartsConversionDescription,
@@ -523,7 +643,7 @@ object PreferencesPages {
                         defaultValue = AppConf.View.DEFAULT_LANGUAGE,
                         select = { it.language },
                         update = { copy(language = it) },
-                        options = Language.values(),
+                        options = Language.entries.toTypedArray(),
                     )
                     selection(
                         title = Strings.PreferencesViewFontFamily,
@@ -564,7 +684,7 @@ object PreferencesPages {
                         defaultValue = AppConf.View.DEFAULT_PINNED_ENTRY_LIST_POSITION,
                         select = { it.pinnedEntryListPosition },
                         update = { copy(pinnedEntryListPosition = it) },
-                        options = AppConf.ViewSidePosition.values(),
+                        options = AppConf.ViewSidePosition.entries.toTypedArray(),
                     )
                 }
             }
@@ -594,7 +714,7 @@ object PreferencesPages {
                         defaultValue = AppConf.Editor.DEFAULT_LOCKED_DRAG,
                         select = { it.lockedDrag },
                         update = { copy(lockedDrag = it) },
-                        options = AppConf.Editor.LockedDrag.values(),
+                        options = AppConf.Editor.LockedDrag.entries.toTypedArray(),
                     )
                     switch(
                         title = Strings.PreferencesEditorLockedSettingParameterWithCursor,
@@ -631,6 +751,16 @@ object PreferencesPages {
                         select = { it.useOnScreenScissors },
                         update = { copy(useOnScreenScissors = it) },
                     )
+                    integer(
+                        title = Strings.PreferencesEditorScissorsScissorsSubmitThreshold,
+                        description = Strings.PreferencesEditorScissorsScissorsSubmitThresholdDescription,
+                        defaultValue = AppConf.Editor.DEFAULT_SCISSORS_SUBMIT_THRESHOLD,
+                        min = AppConf.Editor.MIN_SCISSORS_SUBMIT_THRESHOLD,
+                        max = AppConf.Editor.MAX_SCISSORS_SUBMIT_THRESHOLD,
+                        enabled = { it.useOnScreenScissors },
+                        select = { it.scissorsSubmitThreshold },
+                        update = { copy(scissorsSubmitThreshold = it) },
+                    )
                     color(
                         title = Strings.PreferencesEditorScissorsColor,
                         defaultValue = AppConf.Editor.DEFAULT_SCISSORS_COLOR,
@@ -648,21 +778,21 @@ object PreferencesPages {
                         defaultValue = AppConf.ScissorsActions.DEFAULT_GO_TO,
                         select = { it.goTo },
                         update = { copy(goTo = it) },
-                        options = AppConf.ScissorsActions.Target.values(),
+                        options = AppConf.ScissorsActions.Target.entries.toTypedArray(),
                     )
                     selection(
                         title = Strings.PreferencesEditorScissorsActionAskForName,
                         defaultValue = AppConf.ScissorsActions.DEFAULT_ASK_FOR_NAME,
                         select = { it.askForName },
                         update = { copy(askForName = it) },
-                        options = AppConf.ScissorsActions.Target.values(),
+                        options = AppConf.ScissorsActions.Target.entries.toTypedArray(),
                     )
                     selection(
                         title = Strings.PreferencesEditorScissorsActionPlay,
                         defaultValue = AppConf.ScissorsActions.DEFAULT_PLAY,
                         select = { it.play },
                         update = { copy(play = it) },
-                        options = AppConf.ScissorsActions.Target.values(),
+                        options = AppConf.ScissorsActions.Target.entries.toTypedArray(),
                     )
                 }
             }
@@ -727,7 +857,7 @@ object PreferencesPages {
                         selection(
                             title = Strings.PreferencesEditorPostEditActionTrigger,
                             defaultValue = AppConf.PostEditAction.DEFAULT_DONE.field,
-                            options = AppConf.PostEditAction.TriggerField.values(),
+                            options = AppConf.PostEditAction.TriggerField.entries.toTypedArray(),
                             select = { it.field },
                             update = { copy(field = it) },
                             enabled = { it.enabled },
@@ -764,7 +894,7 @@ object PreferencesPages {
                         selection(
                             title = Strings.PreferencesEditorPostEditActionTrigger,
                             defaultValue = AppConf.PostEditAction.DEFAULT_NEXT.field,
-                            options = AppConf.PostEditAction.TriggerField.values(),
+                            options = AppConf.PostEditAction.TriggerField.entries.toTypedArray(),
                             select = { it.field },
                             update = { copy(field = it) },
                             enabled = { it.enabled },
@@ -867,14 +997,14 @@ object PreferencesPages {
                         defaultValue = AppConf.ContinuousLabelNames.DEFAULT_SIZE,
                         select = { it.size },
                         update = { copy(size = it) },
-                        options = AppConf.FontSize.values(),
+                        options = AppConf.FontSize.entries.toTypedArray(),
                     )
                     selection(
                         title = Strings.PreferencesEditorContinuousLabelNamesPosition,
                         defaultValue = AppConf.ContinuousLabelNames.DEFAULT_POSITION,
                         select = { it.position },
                         update = { copy(position = it) },
-                        options = AppConf.ViewPosition.values(),
+                        options = AppConf.ViewPosition.entries.toTypedArray(),
                     )
                 }
             }
@@ -931,7 +1061,7 @@ object PreferencesPages {
                         defaultValue = AppConf.AutoSave.DEFAULT_TARGET,
                         select = { it.target },
                         update = { copy(target = it) },
-                        options = AppConf.AutoSave.Target.values(),
+                        options = AppConf.AutoSave.Target.entries.toTypedArray(),
                     )
                     integer(
                         title = Strings.PreferencesAutoSaveIntervalSec,
@@ -939,6 +1069,24 @@ object PreferencesPages {
                         min = AppConf.AutoSave.MIN_INTERVAL_SEC,
                         select = { it.intervalSec },
                         update = { copy(intervalSec = it) },
+                    )
+                }
+            }
+    }
+
+    object AutoReload : PreferencesPage(Strings.PreferencesAutoReload, Strings.PreferencesAutoReloadDescription) {
+        override val content: List<PreferencesGroup>
+            get() = buildPageContent {
+                withContext(
+                    selector = { it.autoReload },
+                    updater = { copy(autoReload = it) },
+                ) {
+                    selection(
+                        title = Strings.PreferencesAutoReloadBehavior,
+                        defaultValue = AppConf.AutoReload.DEFAULT_BEHAVIOR,
+                        select = { it.behavior },
+                        update = { copy(behavior = it) },
+                        options = AppConf.AutoReload.Behavior.entries.toTypedArray(),
                     )
                 }
             }
@@ -980,7 +1128,7 @@ object PreferencesPages {
                         title = Strings.PreferencesMiscUpdateChannel,
                         description = Strings.PreferencesMiscUpdateChannelDescription,
                         defaultValue = AppConf.Misc.DEFAULT_UPDATE_CHANNEL,
-                        options = UpdateChannel.values(),
+                        options = UpdateChannel.entries.toTypedArray(),
                         select = { it.updateChannel },
                         update = { copy(updateChannel = it) },
                     )
@@ -1019,6 +1167,7 @@ object PreferencesPages {
             Editor,
             Playback,
             AutoSave,
+            AutoReload,
             History,
             Misc,
         )

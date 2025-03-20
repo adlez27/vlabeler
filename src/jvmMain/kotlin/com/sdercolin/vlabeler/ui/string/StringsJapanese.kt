@@ -11,13 +11,18 @@ fun Strings.ja(): String? = when (this) {
     MenuFileOpen -> "開く..."
     MenuFileOpenRecent -> "最近開いたプロジェクト"
     MenuFileOpenRecentClear -> "履歴をクリア"
+    MenuFileQuickEdit -> "クイック編集"
     MenuFileSave -> "保存"
     MenuFileSaveAs -> "名前を付けて保存..."
     MenuFileProjectSetting -> "プロジェクト設定..."
-    MenuFileImport -> "インポート..."
-    MenuFileExport -> "エクスポート..."
-    MenuFileExportOverwrite -> "上書きエクスポート..."
-    MenuFileExportOverwriteAll -> "すべて上書きエクスポート..."
+    MenuFileImportProject -> "プロジェクトをインポート..."
+    MenuFileReloadLabelFile -> "ラベルファイルを再読み込み"
+    MenuFileReloadLabelFilePickFile -> "ファイルから..."
+    MenuFileReloadLabelFileDefault -> "出力先ファイルから..."
+    MenuFileReloadLabelFileDefaultWithoutConfirmation -> "出力先ファイルから（確認なし）"
+    MenuFileExport -> "ラベルファイルをエクスポート..."
+    MenuFileExportOverwrite -> "ラベルファイルを上書きエクスポート"
+    MenuFileExportOverwriteAll -> "すべてのラベルファイルを上書きエクスポート"
     MenuFileInvalidateCaches -> "キャッシュを無効化"
     MenuFileClose -> "閉じる"
     MenuEdit -> "編集"
@@ -73,6 +78,7 @@ fun Strings.ja(): String? = when (this) {
     MenuToolsPrerender -> "すべてのグラフをプリレンダリング..."
     MenuToolsSyncSample -> "サンプルの末尾に対する相対値をすべて変換..."
     MenuToolsRecycleMemory -> "メモリを解放"
+    MenuToolsFileNameNormalizer -> "ファイル名を正規化..."
     MenuSettings -> "設定"
     MenuSettingsPreferences -> "環境設定..."
     MenuSettingsLabelers -> "ラベラー..."
@@ -111,6 +117,7 @@ fun Strings.ja(): String? = when (this) {
     StarterStart -> "はじめる"
     StarterNewProject -> "新規プロジェクト..."
     StarterOpen -> "開く..."
+    StarterQuickEdit -> "クイック編集"
     StarterRecent -> "最近開いたプロジェクト"
     StarterRecentEmpty -> "最近開いたプロジェクトはありません。"
     StarterRecentDeleted -> "このプロジェクトはすでに削除されています。"
@@ -199,6 +206,9 @@ fun Strings.ja(): String? = when (this) {
     AskIfRedirectSampleDirectoryDialogDescription ->
         "現在のサブプロジェクトのサンプルディレクトリ(%s)が見つかりません。あるいは、その中にサンプルファイルがありません。" +
             "他のディレクトリに変更しますか？"
+    AskIfLabelFileChangeDetectedDialogDescription ->
+        "ラベルファイルが外部プログラムによって変更されました。変更を反映するためにファイルを再読み込みしますか？\n" +
+            "この動作は `環境設定` -> `自動再読み込み` でカスタマイズできます。"
     PluginDialogTitle -> "vLabeler - プラグイン"
     PluginDialogInfoAuthor -> "作者：%s"
     PluginDialogInfoVersion -> "バージョン：%d"
@@ -270,6 +280,7 @@ fun Strings.ja(): String? = when (this) {
         "ファイル名が「%s」で、拡張子が「%s」の動画は見つかりませんでした。"
     PluginRuntimeExceptionTemplate -> "プラグインの実行中にエラーが発生しました：%s"
     ProjectConstructorRuntimeExceptionTemplate -> "プロジェクトの作成中にエラーが発生しました：%s"
+    QuickProjectBuilderRuntimeExceptionTemplate -> "クイック編集プロジェクトの作成中にエラーが発生しました：%s"
     PropertySetterRuntimeExceptionTemplate -> "プロパティの設定中にエラーが発生しました：%s"
     PropertySetterUnexpectedRuntimeException ->
         "プロパティの設定中に予期しないエラーが発生しました。ラベラーの作者に連絡してください。"
@@ -365,6 +376,22 @@ fun Strings.ja(): String? = when (this) {
     PreferencesChartsPowerIntensityAccuracy -> "パワーの高さ（ピクセル）"
     PreferencesChartsPowerColor -> "パワーの色"
     PreferencesChartsPowerBackgroundColor -> "背景の色"
+    PreferencesChartsFundamental -> "F0"
+    PreferencesChartsFundamentalDescription -> "F0の描画設定をカスタマイズします。"
+    PreferencesChartsFundamentalEnabled -> "F0を表示"
+    PreferencesChartsFundamentalHeight -> "波形グラフの高さに対する高さの割合（%%）"
+    PreferencesChartsFundamentalSemitoneResolution -> "画像中に半音ごとの解像度"
+    PreferencesChartsFundamentalMinFundamental -> "最小周波数（Hz）"
+    PreferencesChartsFundamentalMinFundamentalInvalid -> "最小周波数は最大周波数より小さくなければなりません。"
+    PreferencesChartsFundamentalMaxFundamental -> "最大周波数（Hz）"
+    PreferencesChartsFundamentalMaxFundamentalInvalid -> "最大周波数は最小周波数より大きくなければなりません。"
+    PreferencesChartsFundamentalSemitoneSampleNum -> "半音ごとのサンプリング数"
+    PreferencesChartsFundamentalMaxHarmonicFrequency -> "最大調波周波数（Hz）"
+    PreferencesChartsFundamentalMaxHarmonicFrequencyInvalid -> "最大調波周波数は最大周波数より大きくなければなりません。"
+    PreferencesChartsFundamentalDrawReferenceLine -> "Cの音で参照線を描画"
+    PreferencesChartsFundamentalColor -> "F0の色"
+    PreferencesChartsFundamentalReferenceLineColor -> "参照線の色"
+    PreferencesChartsFundamentalBackgroundColor -> "背景の色"
     PreferencesChartsConversion -> "オーディオフォーマットのサポート"
     PreferencesChartsConversionDescription -> "wav 以外のオーディオフォーマットのサポートを設定します。"
     PreferencesChartsConversionFFmpegPath -> "FFmpeg 実行可能ファイルのパス"
@@ -463,6 +490,9 @@ fun Strings.ja(): String? = when (this) {
         "有効にすると、はさみでクリックした時に、エディタ上に新しいエントリ名の入力欄が表示されます。" +
             "Enterキーを押すか、クリック位置からカーソルを離すことで、カットアクションを確定できます。" +
             "Escキーを押すことで、アクションをキャンセルできます。この設定は、複数エントリ編集モードでのみ有効です。"
+    PreferencesEditorScissorsScissorsSubmitThreshold -> "アクション確定閾値（DP）"
+    PreferencesEditorScissorsScissorsSubmitThresholdDescription ->
+        "はさみでクリックした後、カーソルを移動してからアクションを確定するまでの距離の閾値です。"
     PreferencesEditorScissorsColor -> "色"
     PreferencesEditorScissorsActionTargetNone -> "なし"
     PreferencesEditorScissorsActionTargetFormer -> "前のエントリ"
@@ -498,6 +528,13 @@ fun Strings.ja(): String? = when (this) {
     PreferencesAutoSaveTargetProject -> "プロジェクトファイルに上書き"
     PreferencesAutoSaveTargetRecord -> "一時ファイル"
     PreferencesAutoSaveIntervalSec -> "間隔（秒）"
+    PreferencesAutoReload -> "自動再読み込み"
+    PreferencesAutoReloadDescription -> "該当のラベルファイルに変更がある時の自動再読み込みの動作をカスタマイズします。"
+    PreferencesAutoReloadBehavior -> "動作"
+    PreferencesAutoReloadBehaviorDisabled -> "無効"
+    PreferencesAutoReloadBehaviorAskWithDetails -> "確認（詳細）"
+    PreferencesAutoReloadBehaviorAsk -> "確認"
+    PreferencesAutoReloadBehaviorAuto -> "自動"
     PreferencesHistory -> "操作履歴"
     PreferencesHistoryDescription -> "操作履歴（取り消し、やり直し）に関する動作をカスタマイズします。"
     PreferencesHistoryMaxSize -> "保存される最大操作数"
@@ -657,9 +694,9 @@ fun Strings.ja(): String? = when (this) {
     ImportEntriesDialogItemSummaryTitle -> "%d 個のエントリ"
     ImportEntriesDialogItemTargetLabel -> "インポート先："
     ImportEntriesDialogItemIncompatible -> "互換性がありません"
-    ImportEntriesDialogReplaceContent -> "すべてのエントリを上書きする"
+    ImportEntriesDialogReplaceContent -> "既存のエントリを削除"
     ImportEntriesDialogReplaceContentDisabledDescription ->
-        "このプロジェクトは、エントリの追加をサポートしていないため、すべてのエントリがインポートされたエントリで上書きされます。"
+        "このプロジェクトは、エントリの追加をサポートしていないため、インポートした場合、既存のすべてのエントリが削除されます。"
     EntrySampleSyncerModuleText -> "サブプロジェクトを処理中 %d/%d..."
     EntrySampleSyncerModuleTextFinished -> "サブプロジェクトを処理中 %d/%d... 完了"
     EntrySampleSyncerSampleText -> "サンプルファイルを処理中 %d/%d..."
@@ -678,5 +715,30 @@ fun Strings.ja(): String? = when (this) {
     EntryFilterSetterDialogHeaderTag -> "タグに"
     EntryFilterSetterDialogHeaderStar -> "スターマーク"
     EntryFilterSetterDialogHeaderDone -> "完了"
+    FileNameNormalizerDialogTitle -> "vLabeler - ファイル名の正規化"
+    FileNameNormalizerTitle -> "ファイル名の正規化"
+    FileNameNormalizerDescription ->
+        "このツールは、NFD（macOS で使用される）から NFC（Windows で使用される）エンコーディングに" +
+            "ファイル名を変換するためのものです。" +
+            "フォルダを選択すると、そのフォルダ以下のすべてのファイル名を再帰的に変換します。" +
+            "ファイルを選択すると、そのファイルの内容を変換します。\n" +
+            "すでにサンプルファイルを使用してプロジェクトを作成している場合は、" +
+            "サンプルファイル名とプロジェクトファイルの内容の両方を変換する必要があります。"
+    FileNameNormalizerHandleFolderButton -> "フォルダを選択"
+    FileNameNormalizerHandleFileContentButton -> "ファイルを選択"
+    FileNameNormalizerHandleFolderSuccess -> "スキャンした %d 個のファイルのうち、%d 個のファイル名を変換しました。"
+    FileNameNormalizerHandleFileSuccess -> "ファイルの内容を変換しました。"
+    FileNameNormalizerHandleFileNoChange -> "ファイルに変換が必要な内容はありませんでした。"
+    ReloadLabelDialogTitle -> "ラベルファイルを再読み込み"
+    ReloadLabelDialogModuleNameTemplate -> "サブプロジェクト：%s"
+    ReloadLabelDialogShowUnchanged -> "変更がないエントリも表示"
+    ReloadLabelDialogNotice ->
+        "この差分プレビューは、現在のラベラーの設定に基づいて計算されているため、すべての細かい違いを表示できない場合があります。" +
+            "再読み込み後、実際の内容を確認してください。"
+    ReloadLabelDialogNoDiff -> "差分はありません"
+    ReloadLabelDialogInheritNotes -> "備考を引き継ぐ"
+    ReloadLabelDialogInheritNotesDescription ->
+        "有効にすると、古いエントリと新しいエントリのすべての対応するエントリペアについて、" +
+            "古いエントリの備考が新しいエントリにコピーされます。"
     else -> null
 }

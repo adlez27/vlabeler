@@ -11,6 +11,7 @@ import com.sdercolin.vlabeler.exception.PropertySetterUnexpectedRuntimeException
 import com.sdercolin.vlabeler.io.autoSaveTemporaryProjectFile
 import com.sdercolin.vlabeler.io.exportProject
 import com.sdercolin.vlabeler.io.exportProjectModule
+import com.sdercolin.vlabeler.io.reloadEntriesFromLabelFile
 import com.sdercolin.vlabeler.io.saveProjectFile
 import com.sdercolin.vlabeler.model.AppConf
 import com.sdercolin.vlabeler.model.Entry
@@ -18,12 +19,16 @@ import com.sdercolin.vlabeler.model.Module
 import com.sdercolin.vlabeler.model.Project
 import com.sdercolin.vlabeler.model.ProjectHistory
 import com.sdercolin.vlabeler.model.SampleInfo
+import com.sdercolin.vlabeler.ui.dialog.CommonConfirmationDialogAction
+import com.sdercolin.vlabeler.ui.dialog.ReloadLabelDialogArgs
 import com.sdercolin.vlabeler.ui.editor.Edition
 import com.sdercolin.vlabeler.ui.editor.IndexedEntry
 import com.sdercolin.vlabeler.ui.editor.ScrollFitViewModel
+import com.sdercolin.vlabeler.util.FileChangeDetection
 import com.sdercolin.vlabeler.util.JavaScript
 import com.sdercolin.vlabeler.util.RecordDir
 import com.sdercolin.vlabeler.util.Resources
+import com.sdercolin.vlabeler.util.calculateMD5
 import com.sdercolin.vlabeler.util.equalsAsFileName
 import com.sdercolin.vlabeler.util.execResource
 import com.sdercolin.vlabeler.util.getChildren
@@ -36,10 +41,14 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.Desktop
 import java.io.File
 
 interface ProjectStore {
+
+    fun initProjectStore(appState: AppState)
+
     val project: Project?
     val hasProject: Boolean
     fun requireProject(): Project
@@ -113,7 +122,7 @@ interface ProjectStore {
     fun previousModule()
     fun jumpToModule(index: Int, targetEntryIndex: Int? = null)
 
-    fun canOverwriteExportCurrentModule(): Boolean
+    fun hasRawLabelFileForCurrentModule(): Boolean
     fun shouldShowOverwriteExportAllModules(): Boolean
     fun canOverwriteExportAllModules(): Boolean
     fun overwriteExportCurrentModule()
@@ -126,6 +135,18 @@ interface ProjectStore {
     suspend fun setCurrentEntryProperty(propertyIndex: Int, value: Float)
 
     fun importEntries(moduleNameToEntries: List<Pair<String, List<Entry>>>, replace: Boolean)
+
+    /**
+     * Reloads the label file and updates the project with the new entries.
+     *
+     * @param file The new label file. If null, use the defined raw label file in the module.
+     * @param skipConfirmation If true, skip the confirmation dialog and apply the new entries directly.
+     */
+    fun reloadLabelFile(file: File?, skipConfirmation: Boolean)
+    fun autoReloadLabel(behavior: AppConf.AutoReload.Behavior, moduleName: String)
+    suspend fun terminalAutoReloadLabel()
+
+    suspend fun withExporting(onSuccess: suspend () -> File)
 }
 
 class ProjectStoreImpl(
@@ -136,6 +157,12 @@ class ProjectStoreImpl(
     private val errorState: AppErrorState,
     private val progressState: AppProgressState,
 ) : ProjectStore {
+
+    private var dialogState: AppDialogState? = null
+
+    override fun initProjectStore(appState: AppState) {
+        dialogState = appState
+    }
 
     override var project: Project? by savedMutableStateOf(null) {
         if (it != null) screenState.editor?.updateProject(it)
@@ -238,6 +265,7 @@ class ProjectStoreImpl(
         if (autoScrollConf.onSwitched ||
             (autoScrollConf.onSwitchedInMultipleEditMode && targetEntryIndex != project?.currentModule?.currentIndex)
         ) {
+            scrollFitViewModel.setMode(ScrollFitViewModel.Mode.FORWARD)
             scrollFitViewModel.emitNext()
         }
         editCurrentProjectModule { cutEntry(index, position, rename, newName, targetEntryIndex) }
@@ -250,6 +278,13 @@ class ProjectStoreImpl(
         target: AppConf.ScissorsActions.Target,
         targetEntryIndex: Int?,
     ) {
+        val autoScrollConf = appConf.value.editor.autoScroll
+        if (autoScrollConf.onSwitched ||
+            (autoScrollConf.onSwitchedInMultipleEditMode && targetEntryIndex != project?.currentModule?.currentIndex)
+        ) {
+            scrollFitViewModel.setMode(ScrollFitViewModel.Mode.FORWARD)
+            scrollFitViewModel.emitNext()
+        }
         editCurrentProjectModule {
             val rename = if (target != AppConf.ScissorsActions.Target.Former) null else name
             val newName = if (target != AppConf.ScissorsActions.Target.Former) name else entries[index].name
@@ -416,7 +451,7 @@ class ProjectStoreImpl(
     override fun createDefaultEntries(moduleName: String, sampleNames: List<String>) {
         val project = requireProject()
         val newEntries = sampleNames.map {
-            Entry.fromDefaultValues(it, it.substringBeforeLast('.'), project.labelerConf)
+            Entry.fromDefaultValues(it, project.labelerConf)
         }
         editProjectModule(moduleName) { copy(entries = entries + newEntries) }
     }
@@ -476,7 +511,7 @@ class ProjectStoreImpl(
     override fun getAutoSavedProjectFile(): File? = listAutoSavedProjectFiles().firstOrNull()
 
     override fun discardAutoSavedProjects() {
-        listAutoSavedProjectFiles().forEach { it.delete() }
+        listAutoSavedProjectFiles().forEach { discardAutoSavedProjectFile(it) }
     }
 
     override suspend fun terminateAutoSaveProject() {
@@ -485,7 +520,13 @@ class ProjectStoreImpl(
     }
 
     private fun discardAutoSavedProject(project: Project) {
-        RecordDir.resolve("_" + project.projectFile.name).takeIf { it.exists() }?.delete()
+        val file = RecordDir.resolve("_" + project.projectFile.name).takeIf { it.exists() } ?: return
+        discardAutoSavedProjectFile(file)
+    }
+
+    private fun discardAutoSavedProjectFile(file: File) {
+        Log.debug("Discarding auto saved project: ${file.absolutePath}")
+        file.delete()
     }
 
     private var autoSaveJob: Job? = null
@@ -588,7 +629,7 @@ class ProjectStoreImpl(
         }
     }
 
-    override fun canOverwriteExportCurrentModule(): Boolean {
+    override fun hasRawLabelFileForCurrentModule(): Boolean {
         val project = project ?: return false
         val module = project.currentModule
         return module.rawFilePath != null
@@ -688,5 +729,93 @@ class ProjectStoreImpl(
                 }
             }
         }
+    }
+
+    override fun reloadLabelFile(file: File?, skipConfirmation: Boolean) {
+        val project = project ?: return
+        val labelFile = file ?: project.currentModule.getRawFile(project) ?: return
+        scope.launch {
+            progressState.showProgress()
+            val result = withContext(Dispatchers.IO) { reloadEntriesFromLabelFile(project, labelFile) }
+                .getOrElse {
+                    errorState.showError(it, null)
+                    progressState.hideProgress()
+                    return@launch
+                }
+            progressState.hideProgress()
+            if (skipConfirmation) {
+                editProject { applyReloadedEntries(result.first, result.second) }
+            } else {
+                dialogState?.openReloadLabelDialog(
+                    ReloadLabelDialogArgs(
+                        project.currentModule.name,
+                        result.first,
+                        result.second,
+                    ),
+                )
+            }
+        }
+    }
+
+    private var fileChangeDetection: FileChangeDetection? = null
+    private var isExporting: Boolean = false
+    private var cachedFileHashMap = mutableMapOf<String, String>()
+
+    override fun autoReloadLabel(behavior: AppConf.AutoReload.Behavior, moduleName: String) {
+        fileChangeDetection?.let {
+            Log.debug("Auto reload label file cancelled")
+            it.dispose()
+        }
+        fileChangeDetection = null
+        if (behavior == AppConf.AutoReload.Behavior.Disabled) return
+        val labelFile = requireProject().modules.find { it.name == moduleName }?.getRawFile(requireProject()) ?: return
+        val directory = labelFile.parentFile ?: return
+        Log.debug("Auto reload label file enabled: $labelFile, behavior: $behavior")
+        fileChangeDetection = FileChangeDetection(
+            directory = directory,
+            filter = {
+                if (it.absolutePath != labelFile.absolutePath || isExporting) {
+                    false
+                } else {
+                    val hash = calculateMD5(it)
+                    val savedHash = cachedFileHashMap[it.absolutePath]
+                    if (hash == savedHash) {
+                        false
+                    } else {
+                        cachedFileHashMap[it.absolutePath] = hash
+                        true
+                    }
+                }
+            },
+            callback = { changed, _ ->
+                val isAllowed = if (behavior == AppConf.AutoReload.Behavior.Auto) {
+                    true
+                } else {
+                    val result = dialogState?.awaitEmbeddedDialog(
+                        CommonConfirmationDialogAction.LabelFileChangeDetected,
+                    )
+                    result != null
+                }
+                if (!isAllowed) return@FileChangeDetection
+                if (changed.isNotEmpty()) {
+                    val skipConfirmation = behavior == AppConf.AutoReload.Behavior.Auto ||
+                        behavior == AppConf.AutoReload.Behavior.Ask
+                    reloadLabelFile(changed.first(), skipConfirmation = skipConfirmation)
+                }
+            },
+        ).apply { startIn(scope) }
+    }
+
+    override suspend fun withExporting(onSuccess: suspend () -> File) {
+        isExporting = true
+        val file = onSuccess()
+        val hash = calculateMD5(file)
+        cachedFileHashMap[file.absolutePath] = hash
+        isExporting = false
+    }
+
+    override suspend fun terminalAutoReloadLabel() {
+        fileChangeDetection?.awaitDispose()
+        fileChangeDetection = null
     }
 }

@@ -53,8 +53,8 @@ class ProjectCreatorState(
         DataSource(Strings.StarterNewDataSourcePage),
         ;
 
-        fun next() = values().getOrNull(ordinal + 1)
-        fun previous() = values().getOrNull(ordinal - 1)
+        fun next() = entries.getOrNull(ordinal + 1)
+        fun previous() = entries.getOrNull(ordinal - 1)
     }
 
     var page: Page by mutableStateOf(Page.Directory)
@@ -72,7 +72,7 @@ class ProjectCreatorState(
     }
 
     private val detailExpandedOnPages = mutableStateListOf(
-        *Page.values().map {
+        *Page.entries.map {
             appRecord.projectCreatorDetailsExpanded.getOrNull(it.ordinal) ?: false
         }.toTypedArray(),
     )
@@ -174,7 +174,7 @@ class ProjectCreatorState(
     fun isWorkingDirectoryValid(): Boolean {
         val file = File(workingDirectory)
         if (file.parentFile?.exists() == false) return false
-        return file.name.isValidFileName() && file.isDirectory && Files.isWritable(file.toPath())
+        return file.name.isValidFileName() && file.isDirectory
     }
 
     fun isProjectFileExisting(): Boolean {
@@ -187,7 +187,6 @@ class ProjectCreatorState(
         val file = File(cacheDirectory)
         val parent = file.parent.orEmpty()
         if (parent != workingDirectory && parent.toFile().exists().not()) return false
-        if (Files.isWritable(parent.toFile().toPath()).not()) return false
         if (file.isFile) return false
         return file.name.isValidFileName()
     }
@@ -307,7 +306,7 @@ class ProjectCreatorState(
         get() = if (labeler.isSelfConstructed) {
             listOf(ContentType.Default, ContentType.Plugin)
         } else {
-            ContentType.values().toList()
+            ContentType.entries.toList()
         }
     var contentType: ContentType by mutableStateOf(
         appRecord.projectContentType?.takeIf { it in selectableContentTypes }
@@ -551,7 +550,7 @@ class ProjectCreatorState(
                 workingDirectory = workingDirectory,
                 projectName = projectName,
                 cacheDirectory = cacheDirectory,
-                labelerConf = labeler,
+                rawLabelerConf = labeler,
                 labelerParams = labelerParams,
                 plugin = templatePlugin?.takeIf { usePlugin },
                 pluginParams = templatePluginParams?.takeIf { usePlugin },

@@ -7,6 +7,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.sdercolin.vlabeler.model.Plugin
@@ -14,6 +15,7 @@ import com.sdercolin.vlabeler.ui.common.CircularProgress
 import com.sdercolin.vlabeler.ui.common.WarningTextStyle
 import com.sdercolin.vlabeler.ui.dialog.EmbeddedDialog
 import com.sdercolin.vlabeler.ui.dialog.QuickLaunchManagerDialog
+import com.sdercolin.vlabeler.ui.dialog.ReloadLabelDialog
 import com.sdercolin.vlabeler.ui.dialog.TrackingSettingsDialog
 import com.sdercolin.vlabeler.ui.dialog.WarningDialog
 import com.sdercolin.vlabeler.ui.dialog.customization.CustomizableItemManagerDialog
@@ -72,7 +74,9 @@ fun App(
                     initialFile = screen.initialFile,
                 )
 
-            is Screen.Editor -> Editor(screen.state, appState)
+            is Screen.Editor -> key(screen.state) {
+                Editor(screen.state, appState)
+            }
         }
         if (appState.isShowingProjectSettingDialog) {
             ProjectSettingDialog(appState, finish = { appState.closeProjectSettingDialog() })
@@ -182,6 +186,17 @@ fun App(
                 finish = { appState.closeImportEntriesDialog() },
                 projectStore = appState,
                 args = it,
+            )
+        }
+        appState.reloadLabelDialogArgs?.let { args ->
+            ReloadLabelDialog(
+                args = args,
+                finish = { result ->
+                    appState.closeReloadLabelDialog()
+                    if (result != null) {
+                        appState.editProject { applyReloadedEntries(args.entries, args.diff, result) }
+                    }
+                },
             )
         }
         appState.error?.let { error ->

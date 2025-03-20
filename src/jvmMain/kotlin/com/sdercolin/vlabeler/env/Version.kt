@@ -64,7 +64,7 @@ data class Version(
 
     fun isInChannel(channel: UpdateChannel): Boolean = when (channel) {
         UpdateChannel.Stable -> isStable
-        UpdateChannel.Preview -> isBeta
+        UpdateChannel.Preview -> isBeta || isStable
     }
 
     companion object {
@@ -78,7 +78,7 @@ data class Version(
             val patch = sections[2].toInt()
             val stageText = sections.getOrNull(3)
             val stage = if (stageText != null) {
-                VersionStage.values().find { stageText.startsWith(it.serialName) }
+                VersionStage.entries.find { stageText.startsWith(it.serialName) }
             } else null
             val stageVersion = stageText?.drop(stage?.serialName?.length ?: 0)?.toInt()
 

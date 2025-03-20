@@ -10,6 +10,7 @@ enum class Language(val code: String, private val displayName: String) : Text {
     English("en", "English"),
     ChineseSimplified("zh-Hans", "简体中文"),
     Japanese("ja", "日本語"),
+    Korean("ko", "한국어"),
     ;
 
     override val text: String
@@ -20,7 +21,7 @@ enum class Language(val code: String, private val displayName: String) : Text {
         val default = English
 
         fun find(languageTag: String): Language? {
-            for (value in values()) {
+            for (value in entries) {
                 val codeLevels = value.code.split("-").scan("") { acc, s ->
                     if (acc.isEmpty()) s else "$acc-$s"
                 }.filter { it.isNotEmpty() }

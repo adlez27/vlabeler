@@ -179,39 +179,42 @@ Let's look into the `labeler.json` file. The following table briefly describes t
 You can also refer to the heavily commented Kotlin source
 code [LabelerConf.kt](../src/jvmMain/kotlin/com/sdercolin/vlabeler/model/LabelerConf.kt) for details.
 
-| Key                  | Type                           | Default value | Description                                                                                                                                |
-|----------------------|--------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| name                 | String                         | (Required)    | This value should match the folder's name.                                                                                                 |
-| version              | Integer                        | 1             | The version of the labeler.                                                                                                                |
-| serialVersion        | Integer                        | 0             | The serial (structure) version of the labeler.                                                                                             |
-| singleFile           | Boolean                        | true          | Whether the labeler is a single file (legacy).                                                                                             |
-| extension            | String                         | (Required)    | The extension of the raw label file.                                                                                                       |
-| defaultInputFilePath | String &#124; null             | null          | The default raw label file path defined for single module projects.                                                                        |
-| displayedName        | String (Localized)             | `name` value  | The displayed name of the labeler.                                                                                                         |
-| author               | String                         | (Required)    | The author of the labeler.                                                                                                                 |
-| email                | String                         | ""            | Contact email of the author.                                                                                                               |
-| description          | String (Localized)             | ""            | A brief description of the labeler.                                                                                                        |
-| website              | String                         | ""            | The website or source code repository of the labeler.                                                                                      |
-| categoryTag          | String                         | ""            | The category tag of the labeler. The labeler will be categorized as `Other` if not specified.                                              |
-| displayOrder         | Integer                        | 0             | The display order of the labeler in the dropdown list.                                                                                     |
-| continuous           | Boolean                        | false         | Whether the entries are continuous, i.e. the end time of an entry is the start time of the next entry.                                     |
-| allowSameNameEntry   | Boolean                        | false         | Whether a module can contain entries with the same name.                                                                                   |
-| defaultValues        | Float[]                        | (Required)    | The default values of timing parameters listed as `[start, *fields, end]` in milliseconds.                                                 |
-| fields               | Field[]                        | (Required)    | The custom timing field definitions of an entry besides standard "start" and "end" fields. See [Field](#field) for details.                |
-| extraFields          | ExtraField[]                   | []            | The extra field definitions that are not timing fields in entry level. See [Extra Field](#extra-field) for details.                        |
-| moduleExtraFields    | ExtraField[]                   | []            | The extra field definitions in module level. See [Extra Field](#extra-field) for details.                                                  |
-| lockedDrag           | LockedDrag                     | {}            | The definition of locked drag behavior i.e. all parameters will move with dragged one. See [Locked Drag](#locked-drag) for details.        |
-| overflowBeforeStart  | PointOverflow                  | "Error"       | Action taken when there are points before "start". See [Point Overflow](#point-overflow) for details.                                      |
-| overflowAfterEnd     | PointOverflow                  | "Error"       | Action taken when there are points after "end". See [Point Overflow](#point-overflow) for details.                                         |
-| postEditNextTrigger  | PostEditTrigger                | {}            | Trigger settings of `Go to next entry after editing` action on "start" and "end". See [Post-edit Actions](#post-edit-actions) for details. |
-| postEditDoneTrigger  | PostEditTrigger                | {}            | Trigger settings of `Mark as done after editing` action on "start" and "end". See [Post-edit Actions](#post-edit-actions) for details.     |
-| decimalDigit         | Integer &#124; null            | 2             | Decimal digit count used in `properties` and `writer`.                                                                                     |
-| properties           | Property[]                     | []            | The definitions of properties. See [Property](#property) for details.                                                                      |
-| parser               | Parser                         | (Required)    | The definition of the parser. See [Parser](#parser) for details.                                                                           |
-| writer               | Writer                         | (Required)    | The definition of the writer. See [Writer](#writer) for details.                                                                           |
-| parameters           | ParameterHolder[]              | []            | The definitions of parameters. See [Parameters](#parameters) for details.                                                                  |
-| projectConstructor   | ProjectConstructor &#124; null | null          | The definition of the project constructor. See [Project Constructor](#project-constructor) for details.                                    |
-| resourceFiles        | String[]                       | []            | Files utilized as resources in your scripts. Their contents are fed into your scripts as string values in the order listed.                |
+| Key                    | Type                           | Default value  | Description                                                                                                                                                                           |
+|------------------------|--------------------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| name                   | String                         | (Required)     | This value should match the folder's name.                                                                                                                                            |
+| version                | Integer                        | 1              | The version of the labeler.                                                                                                                                                           |
+| serialVersion          | Integer                        | 0              | The serial (structure) version of the labeler.                                                                                                                                        |
+| singleFile             | Boolean                        | true           | Whether the labeler is a single file (legacy).                                                                                                                                        |
+| extension              | String                         | (Required)     | The extension of the raw label file.                                                                                                                                                  |
+| defaultInputFilePath   | String &#124; null             | null           | The default raw label file path defined for single module projects.                                                                                                                   |
+| displayedName          | String (Localized)             | `name` value   | The displayed name of the labeler.                                                                                                                                                    |
+| author                 | String                         | (Required)     | The author of the labeler.                                                                                                                                                            |
+| email                  | String                         | ""             | Contact email of the author.                                                                                                                                                          |
+| description            | String (Localized)             | ""             | A brief description of the labeler.                                                                                                                                                   |
+| website                | String                         | ""             | The website or source code repository of the labeler.                                                                                                                                 |
+| categoryTag            | String                         | ""             | The category tag of the labeler. The labeler will be categorized as `Other` if not specified.                                                                                         |
+| displayOrder           | Integer                        | 0              | The display order of the labeler in the dropdown list.                                                                                                                                |
+| continuous             | Boolean                        | false          | Whether the entries are continuous, i.e. the end time of an entry is the start time of the next entry.                                                                                |
+| allowSameNameEntry     | Boolean                        | false          | Whether a module can contain entries with the same name.                                                                                                                              |
+| defaultEntryName       | String &#124; null             | null           | The default name of an entry. If null, sample file name without extension will be used.                                                                                               |
+| defaultValues          | Float[]                        | (Required)     | The default values of timing parameters listed as `[start, *fields, end]` in milliseconds.                                                                                            |
+| fields                 | Field[]                        | (Required)     | The custom timing field definitions of an entry besides standard "start" and "end" fields. See [Field](#field) for details.                                                           |
+| extraFields            | ExtraField[]                   | []             | The extra field definitions that are not timing fields in entry level. See [Extra Field](#extra-field) for details.                                                                   |
+| moduleExtraFields      | ExtraField[]                   | []             | The extra field definitions in module level. See [Extra Field](#extra-field) for details.                                                                                             |
+| lockedDrag             | LockedDrag                     | {}             | The definition of locked drag behavior i.e. all parameters will move with dragged one. See [Locked Drag](#locked-drag) for details.                                                   |
+| overflowBeforeStart    | PointOverflow                  | "Error"        | Action taken when there are points before "start". See [Point Overflow](#point-overflow) for details.                                                                                 |
+| overflowAfterEnd       | PointOverflow                  | "Error"        | Action taken when there are points after "end". See [Point Overflow](#point-overflow) for details.                                                                                    |
+| postEditNextTrigger    | PostEditTrigger                | {}             | Trigger settings of `Go to next entry after editing` action on "start" and "end". See [Post-edit Actions](#post-edit-actions) for details.                                            |
+| postEditDoneTrigger    | PostEditTrigger                | {}             | Trigger settings of `Mark as done after editing` action on "start" and "end". See [Post-edit Actions](#post-edit-actions) for details.                                                |
+| decimalDigit           | Integer &#124; null            | 2              | Decimal digit count used in `properties` and `writer`.                                                                                                                                |
+| entrySimilarityWeights | EntrySimilarityWeights         | Default values | Configuration for the weights of different properties of an entry in the similarity score calculation. See [Support label file reloading](#support-label-file-reloading) for details. |
+| properties             | Property[]                     | []             | The definitions of properties. See [Property](#property) for details.                                                                                                                 |
+| parser                 | Parser                         | (Required)     | The definition of the parser. See [Parser](#parser) for details.                                                                                                                      |
+| writer                 | Writer                         | (Required)     | The definition of the writer. See [Writer](#writer) for details.                                                                                                                      |
+| parameters             | ParameterHolder[]              | []             | The definitions of parameters. See [Parameters](#parameters) for details.                                                                                                             |
+| projectConstructor     | ProjectConstructor &#124; null | null           | The definition of the project constructor. See [Project Constructor](#project-constructor) for details.                                                                               |
+| quickProjectBuilders   | QuickProjectBuilder[]          | []             | The definitions of quick project builders. See [Quick Project Builder](#quick-project-builder) for details.                                                                           |
+| resourceFiles          | String[]                       | []             | Files utilized as resources in your scripts. Their contents are fed into your scripts as string values in the order listed.                                                           |
 
 We will explain some of the fields in the following sections.
 
@@ -456,6 +459,27 @@ the two actions respectively. Their values are of the `PostEditTrigger` type, in
 For setting triggers on custom fields, you can use the `triggerPostEditNext` and `triggerPostEditDone` fields in the
 `Field` object instead. They are `false` by default.
 
+### Support label file reloading
+
+When user tries to reload a label file, the application will compare the entries in the file with the entries in the
+current subproject to display the differences. To calculate the similarity score between two entries, you need to define
+the weights of different properties of an entry in the `entrySimilarityWeights` field of your labeler.
+
+`EntrySimilarityWeights` is an object with the following fields:
+
+| Key       | Type    | Default value | Description                                                                                       |
+|-----------|---------|---------------|---------------------------------------------------------------------------------------------------|
+| name      | Float   | 0.5           | Weight for the `name` property.                                                                   |
+| sample    | Float   | 0.3           | Weight for the `sample` property.                                                                 |
+| start     | Float   | 0.1           | Weight for the `start` property.                                                                  |
+| end       | Float   | 0.1           | Weight for the `end` property.                                                                    |
+| points    | Float[] | []            | Weights for the `points` property. The size of the list should match the size of the points list. |
+| extras    | Float[] | []            | Weights for the `extras` property. The size of the list should match the size of the extras list. |
+| tag       | Float   | 0             | Weight for the `tag` property.                                                                    |
+| threshold | Float   | 0.75          | The minimum similarity score for two entries to be considered as the same entry.                  |
+
+Please refer to the values in built-in labelers as an example for setting a proper set of weights.
+
 ### Property
 
 By using standard fields "start" and "end", custom fields defined by `fields` and extra fields defined by `extraFields`,
@@ -557,7 +581,21 @@ The object only contain a field `scripts` in `EmbeddedScripts` type, e.g.
 }
 ```
 
-See the [Construct a Project] section for details about the scripts.
+See the [Constructing a Project](#constructing-a-project) section for details about the scripts.
+
+### Quick Project Builder
+
+The array contains `QuickProjectBuilder` objects, which have the following fields:
+
+| Key           | Type                           | Default value | Description                                                              |
+|---------------|--------------------------------|---------------|--------------------------------------------------------------------------|
+| name          | String                         | (Required)    | The name of the quick project builder that is unique within the labeler. |
+| displayedName | String (Localized)             | `name` value  | The displayed name of the quick project builder in the UI.               |
+| description   | String (Localized) &#124; null | null          | The description of the quick project builder to show a tooltip.          |
+| extension     | String                         | (Required)    | The extension of the input file. Empty string "" means folder.           |
+| scripts       | EmbeddedScripts                | (Required)    | The scripts to create a quick edit project.                              |
+
+See the [Enable Quick Edit](#enable-quick-edit) section for details about the feature and the scripts.
 
 ## Scripting in a Labeler
 
@@ -681,6 +719,40 @@ Each module will have:
 
 At last, we recommend checking if there are modules created. If not, throw an error with customized message to help
 users to check their settings.
+
+### Enable Quick Edit
+
+Quick Edit is a feature that allows users to quickly create a project with a single file or a folder as input.
+The feature is available in the start page of the application, and the user can select a quick project builder that is
+defined in the labeler to create a project.
+
+To enable the Quick Edit feature, you need to define a `QuickProjectBuilder` object in the `quickProjectBuilders` field,
+as introduced in the [Quick Project Builder](#quick-project-builder) section.
+
+Note that Quick Edit is only available when the project constructor is available or when the `defaultInputFilePath` is
+set in the labeler. This is because the `Auto Export` feature needs to be supported by the labeler to provide a better
+user experience.
+
+The `scripts` field in the `QuickProjectBuilder` object should refer to a JavaScript code snippet that determine
+how to create a project from the input file or folder.
+
+#### Input
+
+- `input`: The [File](file-api.md) object of the input file or folder.
+- `savedParams`: The saved parameters of the labeler. You can get values using their `name` as the key. Compared to
+  other cases where `params` are provided, here the `savedParams` are provided with their raw values. Please log the
+  values to before using them to check the actual values.
+
+#### Output
+
+- `projectFile`: The [File](file-api.md) object of the project file that will be created. The file should be a `.vlp`
+  file.
+- `sampleDirectory`: The [File](file-api.md) object of the root directory containing the sample files.
+- `cacheDirectory`: The [File](file-api.md) object of the cache directory. If not set, the default cache directory will
+  be used.
+- `encoding`: The encoding of the raw label file, selected by the user during project creation. Defaults to "UTF-8".
+- `params`: The desired parameters of the labeler in the same format as the `savedParams`. If not set, `savedParams`
+  will be used.
 
 ### Property Getter
 

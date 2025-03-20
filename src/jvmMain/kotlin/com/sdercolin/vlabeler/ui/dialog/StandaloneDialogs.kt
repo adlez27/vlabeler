@@ -1,11 +1,14 @@
 package com.sdercolin.vlabeler.ui.dialog
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalFocusManager
 import com.sdercolin.vlabeler.debug.DebugState
 import com.sdercolin.vlabeler.env.Log
 import com.sdercolin.vlabeler.io.exportProjectModule
 import com.sdercolin.vlabeler.io.importProjectFile
 import com.sdercolin.vlabeler.io.loadProject
+import com.sdercolin.vlabeler.io.startQuickEdit
 import com.sdercolin.vlabeler.model.Project
 import com.sdercolin.vlabeler.ui.AppState
 import com.sdercolin.vlabeler.ui.dialog.updater.UpdaterDialog
@@ -13,6 +16,7 @@ import com.sdercolin.vlabeler.ui.string.*
 import com.sdercolin.vlabeler.util.getDirectory
 import com.sdercolin.vlabeler.util.lastPathSection
 import com.sdercolin.vlabeler.util.moveCacheDirTo
+import com.sdercolin.vlabeler.util.runIf
 import com.sdercolin.vlabeler.util.toFile
 import com.sdercolin.vlabeler.util.toFileOrNull
 import kotlinx.coroutines.CoroutineScope
@@ -24,12 +28,14 @@ import java.io.File
 fun StandaloneDialogs(
     mainScope: CoroutineScope,
     appState: AppState,
-) {
+) = CompositionLocalProvider(LocalLanguage.provides(appState.appConf.view.language)) {
+    val focusManager = LocalFocusManager.current
     when {
         appState.isShowingOpenProjectDialog -> OpenFileDialog(
             title = string(Strings.OpenProjectDialogTitle),
             extensions = listOf(Project.PROJECT_FILE_EXTENSION),
         ) { parent, name ->
+            focusManager.clearFocus()
             appState.closeOpenProjectDialog()
             if (parent != null && name != null) {
                 loadProject(mainScope, File(parent, name), appState)
@@ -41,6 +47,7 @@ fun StandaloneDialogs(
             initialDirectory = appState.requireProject().workingDirectory.absolutePath,
             initialFileName = appState.requireProject().projectFile.name,
         ) { directory, fileName ->
+            focusManager.clearFocus()
             appState.closeSaveAsProjectDialog()
             if (directory != null && fileName != null) {
                 appState.editProject {
@@ -84,13 +91,34 @@ fun StandaloneDialogs(
                     ?: project.labelerConf.defaultInputFilePath?.lastPathSection
                     ?: "${project.projectName}$currentModuleNameSection.${project.labelerConf.extension}",
             ) { parent, name ->
+                focusManager.clearFocus()
                 appState.closeExportDialog()
                 if (parent != null && name != null) {
                     mainScope.launch(Dispatchers.IO) {
                         appState.showProgress()
-                        exportProjectModule(appState.requireProject(), project.currentModuleIndex, File(parent, name))
+                        appState.exportProjectModule(
+                            appState.requireProject(),
+                            project.currentModuleIndex,
+                            File(parent, name),
+                        )
                         appState.hideProgress()
                     }
+                }
+            }
+        }
+        appState.quickEditArgs != null -> appState.quickEditArgs.let { (labeler, builder) ->
+            OpenFileDialog(
+                title = builder.getDisplayedName(),
+                extensions = if (builder.extension.isNotEmpty()) listOf(builder.extension) else null,
+                directoryMode = builder.extension.isEmpty(),
+            ) { parent, name ->
+                focusManager.clearFocus()
+                appState.closeQuickEditFileDialog()
+                if (parent != null && name != null) {
+                    val file = File(parent, name).runIf(builder.extension.isEmpty()) {
+                        getDirectory()
+                    }
+                    startQuickEdit(mainScope, labeler, builder, file, appState)
                 }
             }
         }
@@ -103,6 +131,7 @@ fun StandaloneDialogs(
                 extensions = null,
                 directoryMode = true,
             ) { parent, name ->
+                focusManager.clearFocus()
                 appState.closeSampleDirectoryRedirectDialog()
                 if (parent != null && name != null) {
                     val newDirectory = File(parent, name).getDirectory()
@@ -116,6 +145,7 @@ fun StandaloneDialogs(
             title = string(Strings.ImportDialogTitle),
             extensions = listOf(Project.PROJECT_FILE_EXTENSION),
         ) { parent, name ->
+            focusManager.clearFocus()
             appState.closeImportDialog()
             if (parent != null && name != null) {
                 importProjectFile(mainScope, File(parent, name), appState)
@@ -149,6 +179,10 @@ fun StandaloneDialogs(
         DebugState.isShowingFontPreviewDialog -> FontPreviewDialog(
             appState.appConf,
             finish = { DebugState.isShowingFontPreviewDialog = false },
+        )
+        appState.isShowingFileNameNormalizerDialog -> FileNameNormalizerDialog(
+            appConf = appState.appConf,
+            finish = { appState.closeFileNameNormalizerDialog() },
         )
     }
 }

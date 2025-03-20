@@ -2,6 +2,7 @@
 
 package com.sdercolin.vlabeler.model
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import com.sdercolin.vlabeler.env.Log
 import com.sdercolin.vlabeler.model.LabelerConf.ExtraField
@@ -50,6 +51,7 @@ import java.io.File
  * @property continuous Whether the entries are continuous, i.e. the end time of an entry is the start time of the next
  *     entry.
  * @property allowSameNameEntry Whether a module can contain entries with the same name.
+ * @property defaultEntryName Default name of the entry. If null, sample file name without extension will be used.
  * @property defaultValues Default value listed as [start, *fields, end] in milliseconds.
  * @property defaultExtras (Deprecated) Use [extraFields] instead.
  * @property fields [Field] definitions containing data used in the label files, except for built-in "start" and "end".
@@ -63,6 +65,8 @@ import java.io.File
  * @property postEditNextTrigger Trigger settings of `Go to next entry after editing` on start and end.
  * @property postEditDoneTrigger Trigger settings of `Mark as done after editing` on start and end.
  * @property decimalDigit Decimal digit count used in [properties] and [writer].
+ * @property entrySimilarityWeights Configuration for the weights of different properties in the similarity score
+ *     calculation. See [EntrySimilarityWeights].
  * @property properties Properties that are used in the following procedures. See [Property].
  * @property parser Defines how data from the original label format are parsed.
  * @property writer Defines how to write content in the original label format.
@@ -90,6 +94,7 @@ data class LabelerConf(
     val displayOrder: Int = 0,
     val continuous: Boolean = false,
     val allowSameNameEntry: Boolean = false,
+    val defaultEntryName: String? = null,
     val defaultValues: List<Float>,
     val defaultExtras: List<String>? = null,
     val fields: List<Field> = listOf(),
@@ -102,11 +107,13 @@ data class LabelerConf(
     val postEditNextTrigger: PostEditTrigger = PostEditTrigger(),
     val postEditDoneTrigger: PostEditTrigger = PostEditTrigger(),
     val decimalDigit: Int? = 2,
+    val entrySimilarityWeights: EntrySimilarityWeights = EntrySimilarityWeights(),
     val properties: List<Property> = listOf(),
     val parser: Parser,
     val writer: Writer,
     val parameters: List<ParameterHolder> = listOf(),
     val projectConstructor: ProjectConstructor? = null,
+    val quickProjectBuilders: List<QuickProjectBuilder> = listOf(),
     override val resourceFiles: List<String> = listOf(),
     @Transient override val directory: File? = null,
     @Transient val builtIn: Boolean = false,
@@ -434,6 +441,30 @@ data class LabelerConf(
         }
     }
 
+    /**
+     * A quick project builder that can be used to create a project with the labeler.
+     *
+     * @property name Name of the quick project builder.
+     * @property displayedName Displayed name of the quick project builder (localized).
+     * @property description Description of the quick project builder (localized), to be displayed in a tooltip.
+     * @property extension File extension of the input file. Use "" to select folder.
+     * @property scripts JavaScript code that creates the project. See the "Quick Project Builder" section of
+     *     [docs/labeler-development.md] for details.
+     */
+    @Serializable
+    @Immutable
+    data class QuickProjectBuilder(
+        val name: String,
+        val displayedName: LocalizedJsonString? = null,
+        val description: LocalizedJsonString? = null,
+        val extension: String,
+        val scripts: EmbeddedScripts,
+    ) {
+
+        @Composable
+        fun getDisplayedName(): String = displayedName?.get() ?: name
+    }
+
     fun getActualEnd(entry: Entry): Float = fields.indexOfFirst { it.replaceEnd }.let { index ->
         if (index == -1) {
             entry.end
@@ -453,6 +484,9 @@ data class LabelerConf(
             parser = parser.copy(scripts = parser.scripts.preload()),
             writer = writer.copy(scripts = writer.scripts?.preload()),
             projectConstructor = projectConstructor?.copy(scripts = projectConstructor.scripts.preload()),
+            quickProjectBuilders = quickProjectBuilders.map {
+                it.copy(scripts = it.scripts.preload())
+            },
             properties = properties.map {
                 it.copy(
                     valueGetter = it.valueGetter.preload(),
@@ -476,6 +510,11 @@ data class LabelerConf(
                 require(Parameter.StringParam.DefaultValueFileReferencePattern.matches(it.defaultValue).not()) {
                     "Default value of string parameter in a labeler cannot be a file reference"
                 }
+            }
+        }
+        if (quickProjectBuilders.isNotEmpty()) {
+            require(projectConstructor != null || defaultInputFilePath != null) {
+                "Quick project builders are defined but either projectConstructor or defaultInputFilePath is missing"
             }
         }
     }

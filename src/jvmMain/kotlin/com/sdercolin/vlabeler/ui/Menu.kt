@@ -15,6 +15,7 @@ import com.sdercolin.vlabeler.env.Log
 import com.sdercolin.vlabeler.env.isDebug
 import com.sdercolin.vlabeler.io.install
 import com.sdercolin.vlabeler.model.AppConf
+import com.sdercolin.vlabeler.model.LabelerConf
 import com.sdercolin.vlabeler.model.Plugin
 import com.sdercolin.vlabeler.model.action.KeyAction
 import com.sdercolin.vlabeler.ui.dialog.InputEntryNameDialogPurpose
@@ -82,6 +83,16 @@ fun FrameWindowScope.Menu(
                             enabled = appRecord.recentProjects.isNotEmpty(),
                         )
                     }
+                    Menu(string(Strings.MenuFileQuickEdit)) {
+                        appState.activeLabelerConfs
+                            .flatMap { labeler -> labeler.quickProjectBuilders.map { labeler to it } }
+                            .forEach {
+                                Item(
+                                    text = it.second.getDisplayedName() + "...",
+                                    onClick = { appState.openQuickEditFileDialog(it) },
+                                )
+                            }
+                    }
                     Item(
                         string(Strings.MenuFileSave),
                         onClick = { appState.requestSave() },
@@ -101,11 +112,45 @@ fun FrameWindowScope.Menu(
                         enabled = appState.hasProject,
                     )
                     Item(
-                        string(Strings.MenuFileImport),
+                        string(Strings.MenuFileImportProject),
                         onClick = { appState.openImportDialog() },
                         shortcut = KeyAction.ImportProject.getKeyShortCut(),
                         enabled = appState.hasProject,
                     )
+                    val canReloadLabelFile = appState.project?.labelerConf?.parser?.scope == LabelerConf.Scope.Entry
+                    Menu(
+                        string(Strings.MenuFileReloadLabelFile),
+                        enabled = canReloadLabelFile,
+                    ) {
+                        Item(
+                            string(Strings.MenuFileReloadLabelFilePickFile),
+                            onClick = { },
+                            shortcut = KeyAction.ReloadLabelFilePickFile.getKeyShortCut(),
+                            enabled = canReloadLabelFile,
+                        )
+                        Item(
+                            string(Strings.MenuFileReloadLabelFileDefault),
+                            onClick = {
+                                appState.reloadLabelFile(
+                                    file = null,
+                                    skipConfirmation = false,
+                                )
+                            },
+                            shortcut = KeyAction.ReloadLabelFileDefault.getKeyShortCut(),
+                            enabled = canReloadLabelFile && appState.hasRawLabelFileForCurrentModule(),
+                        )
+                        Item(
+                            string(Strings.MenuFileReloadLabelFileDefaultWithoutConfirmation),
+                            onClick = {
+                                appState.reloadLabelFile(
+                                    file = null,
+                                    skipConfirmation = true,
+                                )
+                            },
+                            shortcut = KeyAction.ReloadLabelFileDefaultWithoutConfirmation.getKeyShortCut(),
+                            enabled = canReloadLabelFile && appState.hasRawLabelFileForCurrentModule(),
+                        )
+                    }
                     Item(
                         string(Strings.MenuFileExport),
                         onClick = { appState.requestExport(overwrite = false) },
@@ -116,7 +161,7 @@ fun FrameWindowScope.Menu(
                         string(Strings.MenuFileExportOverwrite),
                         onClick = { appState.requestExport(overwrite = true) },
                         shortcut = KeyAction.ExportProjectOverwrite.getKeyShortCut(),
-                        enabled = appState.hasProject && appState.canOverwriteExportCurrentModule(),
+                        enabled = appState.hasProject && appState.hasRawLabelFileForCurrentModule(),
                     )
                     if (appState.shouldShowOverwriteExportAllModules()) {
                         Item(
@@ -146,16 +191,16 @@ fun FrameWindowScope.Menu(
                         string(Strings.MenuEditUndo),
                         onClick = { appState.undo() },
                         shortcut = KeyAction.Undo.getKeyShortCut(),
-                        enabled = appState.history.canUndo,
+                        enabled = appState.history.canUndo && appState.isEditorActive,
                     )
                     Item(
                         string(Strings.MenuEditRedo),
                         onClick = { appState.redo() },
                         shortcut = KeyAction.Redo.getKeyShortCut(),
-                        enabled = appState.history.canRedo,
+                        enabled = appState.history.canRedo && appState.isEditorActive,
                     )
                     Menu(string(Strings.MenuEditTools)) {
-                        Tool.values().forEach { tool ->
+                        Tool.entries.forEach { tool ->
                             CheckboxItem(
                                 string(tool.stringKey),
                                 checked = appState.editor?.let { it.tool == tool } ?: false,
@@ -476,6 +521,11 @@ fun FrameWindowScope.Menu(
                         string(Strings.MenuToolsRecycleMemory),
                         onClick = { System.gc() },
                         shortcut = KeyAction.RecycleMemory.getKeyShortCut(),
+                    )
+                    Item(
+                        string(Strings.MenuToolsFileNameNormalizer),
+                        onClick = { appState.openFileNameNormalizerDialog() },
+                        shortcut = KeyAction.FileNameNormalizer.getKeyShortCut(),
                     )
                 }
             }

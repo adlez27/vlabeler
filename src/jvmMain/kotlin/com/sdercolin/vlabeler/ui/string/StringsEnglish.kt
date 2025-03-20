@@ -9,13 +9,18 @@ fun Strings.en(): String = when (this) {
     MenuFileOpen -> "Open..."
     MenuFileOpenRecent -> "Open Recent"
     MenuFileOpenRecentClear -> "Clear Recently Opened"
+    MenuFileQuickEdit -> "Quick Edit"
     MenuFileSave -> "Save"
     MenuFileSaveAs -> "Save As..."
     MenuFileProjectSetting -> "Project Settings..."
-    MenuFileImport -> "Import..."
-    MenuFileExport -> "Export..."
-    MenuFileExportOverwrite -> "Export Overwriting"
-    MenuFileExportOverwriteAll -> "Export Overwriting All"
+    MenuFileImportProject -> "Import Project..."
+    MenuFileReloadLabelFile -> "Reload Label File"
+    MenuFileReloadLabelFilePickFile -> "From File..."
+    MenuFileReloadLabelFileDefault -> "From Output File..."
+    MenuFileReloadLabelFileDefaultWithoutConfirmation -> "From Output File (without confirmation)"
+    MenuFileExport -> "Export Label File..."
+    MenuFileExportOverwrite -> "Export Label File Overwriting"
+    MenuFileExportOverwriteAll -> "Export All Label Files Overwriting"
     MenuFileInvalidateCaches -> "Invalidate Caches"
     MenuFileClose -> "Close"
     MenuEdit -> "Edit"
@@ -71,6 +76,7 @@ fun Strings.en(): String = when (this) {
     MenuToolsPrerender -> "Prerender All Charts..."
     MenuToolsSyncSample -> "Convert all values relative to the end of sample..."
     MenuToolsRecycleMemory -> "Recycle Memory"
+    MenuToolsFileNameNormalizer -> "File Name Normalizer..."
     MenuSettings -> "Settings"
     MenuSettingsPreferences -> "Preferences..."
     MenuSettingsLabelers -> "Labelers..."
@@ -109,6 +115,7 @@ fun Strings.en(): String = when (this) {
     StarterStart -> "Start"
     StarterNewProject -> "New Project..."
     StarterOpen -> "Open..."
+    StarterQuickEdit -> "Quick Edit"
     StarterRecent -> "Recent"
     StarterRecentEmpty -> "You have no recent projects."
     StarterRecentDeleted -> "This project file has been removed."
@@ -203,6 +210,10 @@ fun Strings.en(): String = when (this) {
         "The sample directory of the current subproject (%s) is not found, " +
             "or doesn't contain any required sample files." +
             "Do you want to redirect it to a new directory?"
+    AskIfLabelFileChangeDetectedDialogDescription ->
+        "The label file has been changed by an external program. " +
+            "Do you want to reload the file to reflect the changes?\n" +
+            "You can customize this behavior in `Preferences` -> `Auto Reload`."
     PluginDialogTitle -> "vLabeler - Plugin"
     PluginDialogInfoAuthor -> "author: %s"
     PluginDialogInfoVersion -> "version: %d"
@@ -274,6 +285,7 @@ fun Strings.en(): String = when (this) {
     CustomizableItemRemovingException -> "Could not remove the selected customized item."
     PluginRuntimeExceptionTemplate -> "Plugin runtime error: %s"
     ProjectConstructorRuntimeExceptionTemplate -> "Labeler runtime error when constructing project: %s"
+    QuickProjectBuilderRuntimeExceptionTemplate -> "Labeler runtime error when creating quick edit project: %s"
     PropertySetterRuntimeExceptionTemplate -> "Labeler runtime error when setting property: %s"
     PropertySetterUnexpectedRuntimeException ->
         "An unexpected error occurred when setting property.\n" +
@@ -379,6 +391,23 @@ fun Strings.en(): String = when (this) {
     PreferencesChartsPowerIntensityAccuracy -> "Bitmap height (px)"
     PreferencesChartsPowerColor -> "Color"
     PreferencesChartsPowerBackgroundColor -> "Background color"
+    PreferencesChartsFundamental -> "F0"
+    PreferencesChartsFundamentalDescription -> "Customize the F0 chart."
+    PreferencesChartsFundamentalEnabled -> "Show F0 chart"
+    PreferencesChartsFundamentalHeight -> "Height relative to waveforms (%%)"
+    PreferencesChartsFundamentalSemitoneResolution -> "Semitone resolution in image"
+    PreferencesChartsFundamentalMinFundamental -> "Min displayed frequency (Hz)"
+    PreferencesChartsFundamentalMinFundamentalInvalid -> "Min frequency must be less than max frequency."
+    PreferencesChartsFundamentalMaxFundamental -> "Max displayed frequency (Hz)"
+    PreferencesChartsFundamentalMaxFundamentalInvalid -> "Max frequency must be greater than min frequency."
+    PreferencesChartsFundamentalSemitoneSampleNum -> "Sample number for each semitone"
+    PreferencesChartsFundamentalMaxHarmonicFrequency -> "Max harmonic frequency (Hz)"
+    PreferencesChartsFundamentalMaxHarmonicFrequencyInvalid ->
+        "Max harmonic frequency must be greater than max frequency."
+    PreferencesChartsFundamentalDrawReferenceLine -> "Draw reference lines on C keys"
+    PreferencesChartsFundamentalColor -> "Color"
+    PreferencesChartsFundamentalReferenceLineColor -> "Reference line color"
+    PreferencesChartsFundamentalBackgroundColor -> "Background color"
     PreferencesChartsConversion -> "Audio Format Support"
     PreferencesChartsConversionDescription -> "Configure support for audio formats other than wav."
     PreferencesChartsConversionFFmpegPath -> "FFmpeg executable path"
@@ -491,6 +520,10 @@ fun Strings.en(): String = when (this) {
             "with the scissors. You can confirm the cutting action by pressing Enter or moving the cursor away " +
             "from the clicked position. You can also cancel the action by pressing Esc. This is only available " +
             "in multiple edit mode."
+    PreferencesEditorScissorsScissorsSubmitThreshold -> "Threshold of action submission (DP)"
+    PreferencesEditorScissorsScissorsSubmitThresholdDescription ->
+        "After clicking with scissors, when you move the cursor away from the clicked position and the distance " +
+            "exceeds the threshold, the scissors action will be submitted."
     PreferencesEditorScissorsColor -> "Color"
     PreferencesEditorScissorsActionTargetNone -> "None"
     PreferencesEditorScissorsActionTargetFormer -> "The former entry"
@@ -530,6 +563,13 @@ fun Strings.en(): String = when (this) {
     PreferencesAutoSaveTargetProject -> "Overwrite project file"
     PreferencesAutoSaveTargetRecord -> "Save to temporary file"
     PreferencesAutoSaveIntervalSec -> "Interval (sec)"
+    PreferencesAutoReload -> "Auto reload"
+    PreferencesAutoReloadDescription -> "Customize the behavior about auto-reloading label files when they are changed."
+    PreferencesAutoReloadBehavior -> "Behavior"
+    PreferencesAutoReloadBehaviorDisabled -> "Disabled"
+    PreferencesAutoReloadBehaviorAskWithDetails -> "Ask with details"
+    PreferencesAutoReloadBehaviorAsk -> "Ask Yes/No"
+    PreferencesAutoReloadBehaviorAuto -> "Auto"
     PreferencesHistory -> "Edit history"
     PreferencesHistoryDescription -> "Customize the behavior about edit history (undo/redo)."
     PreferencesHistoryMaxSize -> "Maximum retained size"
@@ -695,10 +735,10 @@ fun Strings.en(): String = when (this) {
     ImportEntriesDialogItemSummaryTitle -> "%d Entries"
     ImportEntriesDialogItemTargetLabel -> "Target"
     ImportEntriesDialogItemIncompatible -> "Incompatible with current project"
-    ImportEntriesDialogReplaceContent -> "Replace current content"
+    ImportEntriesDialogReplaceContent -> "Remove current entries"
     ImportEntriesDialogReplaceContentDisabledDescription ->
         "The current project doesn't support appending entries, " +
-            "so all the current entries will be replaced by imported ones."
+            "so all the current entries will be removed before importing."
     EntrySampleSyncerModuleText -> "Handling subprojects %d/%d..."
     EntrySampleSyncerModuleTextFinished -> "Handling subprojects %d/%d... Done"
     EntrySampleSyncerSampleText -> "Handling sample files %d/%d..."
@@ -717,4 +757,29 @@ fun Strings.en(): String = when (this) {
     EntryFilterSetterDialogHeaderTag -> "Tag contains"
     EntryFilterSetterDialogHeaderStar -> "Starred"
     EntryFilterSetterDialogHeaderDone -> "Done"
+    FileNameNormalizerDialogTitle -> "vLabeler - File Name Normalizer"
+    FileNameNormalizerTitle -> "File Name Normalizer"
+    FileNameNormalizerDescription ->
+        "This tool is for convert file names from NFD(usually used on macOS) to " +
+            "NFC(usually used on Windows) encoding." +
+            "Select a folder to convert all the file names under it recursively, " +
+            "or select a file to convert its content.\n" +
+            "If you have already created a project based on sample files, make sure you convert both the sample file " +
+            "names and the content of the project file."
+    FileNameNormalizerHandleFolderButton -> "Pick a folder"
+    FileNameNormalizerHandleFileContentButton -> "Pick a file"
+    FileNameNormalizerHandleFolderSuccess -> "Scanned %d files, converted %d files."
+    FileNameNormalizerHandleFileSuccess -> "Successfully converted the file content."
+    FileNameNormalizerHandleFileNoChange -> "No conversion needed for the file content."
+    ReloadLabelDialogTitle -> "Reload Label File"
+    ReloadLabelDialogModuleNameTemplate -> "Subproject: %s"
+    ReloadLabelDialogShowUnchanged -> "Show unchanged"
+    ReloadLabelDialogNotice ->
+        "This difference preview is calculated based on settings of the current labeler, " +
+            "so it may not show all minor differences. Please check the actual content after reloading to make sure " +
+            "everything is correct."
+    ReloadLabelDialogNoDiff -> "No difference found."
+    ReloadLabelDialogInheritNotes -> "Inherit notes"
+    ReloadLabelDialogInheritNotesDescription ->
+        "If enabled, the notes on old entries will be copied to the new entries for all matched entry pairs."
 }

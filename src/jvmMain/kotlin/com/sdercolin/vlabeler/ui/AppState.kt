@@ -12,6 +12,7 @@ import com.sdercolin.vlabeler.audio.PlayerState
 import com.sdercolin.vlabeler.env.KeyboardViewModel
 import com.sdercolin.vlabeler.env.isRunningOnRosetta
 import com.sdercolin.vlabeler.exception.InvalidOpenedProjectException
+import com.sdercolin.vlabeler.io.QuickEditRequest
 import com.sdercolin.vlabeler.io.awaitLoadProject
 import com.sdercolin.vlabeler.io.awaitOpenCreatedProject
 import com.sdercolin.vlabeler.io.loadAvailableLabelerConfs
@@ -63,6 +64,7 @@ import com.sdercolin.vlabeler.ui.string.*
 import com.sdercolin.vlabeler.util.AppDir
 import com.sdercolin.vlabeler.util.ParamMap
 import com.sdercolin.vlabeler.util.RecordDir
+import com.sdercolin.vlabeler.util.deleteRecursivelyLogged
 import com.sdercolin.vlabeler.util.getDefaultNewEntryName
 import com.sdercolin.vlabeler.util.toFile
 import com.sdercolin.vlabeler.util.toFrame
@@ -112,6 +114,7 @@ class AppState(
 
     init {
         initDialogState(this)
+        initProjectStore(this)
         consumeArguments(launchArguments)
     }
 
@@ -367,12 +370,15 @@ class AppState(
                     action.state.removeItem(action.item)
                 }
                 is CommonConfirmationDialogAction.ClearAppData -> {
-                    AppDir.deleteRecursively()
+                    AppDir.deleteRecursivelyLogged()
                     exit()
                 }
                 is CommonConfirmationDialogAction.ClearAppRecord -> {
-                    RecordDir.deleteRecursively()
+                    RecordDir.deleteRecursivelyLogged()
                     exit()
+                }
+                CommonConfirmationDialogAction.LabelFileChangeDetected -> {
+                    // Always awaited
                 }
             }
             is EditExtraDialogResult -> when (result.target) {
@@ -472,6 +478,7 @@ class AppState(
 
     fun exit(fromError: Boolean = false) {
         mainScope.launch {
+            terminalAutoReloadLabel()
             terminateAutoSaveProject()
             if (!fromError) discardAutoSavedProjects()
             ipcState.close()
@@ -526,8 +533,8 @@ class AppState(
         }
     }
 
-    fun consumeOpenOrCreateIpcRequest(request: OpenOrCreateRequest) = runCatching {
-        mainScope.launch {
+    fun consumeOpenOrCreateIpcRequest(request: OpenOrCreateRequest) = mainScope.launch {
+        runCatching {
             // check if the project is already opened
             val isProjectAlreadyOpened = request.projectFile.toFile().absolutePath == project?.projectFile?.absolutePath
             if (!isProjectAlreadyOpened) {
@@ -569,10 +576,22 @@ class AppState(
             request.gotoEntryByName?.let {
                 jumpToModuleByNameAndEntryName(it.parentFolderName, it.entryName)
             }
+        }.onFailure {
+            showError(it, pendingAction = AppErrorState.ErrorPendingAction.ExitProject)
         }
-    }.onFailure {
-        showError(it, pendingAction = AppErrorState.ErrorPendingAction.ExitProject)
     }
+
+    fun consumeQuickEditRequest(request: QuickEditRequest) =
+        mainScope.launch {
+            runCatching {
+                val newProject = request.create().getOrThrow()
+                trackProjectCreation(newProject)
+                appRecordStore.update { addRecentQuickProjectBuilder(request.labelerConf.name, request.builder.name) }
+                awaitOpenCreatedProject(newProject, this@AppState)
+            }.onFailure {
+                showError(it)
+            }
+        }
 
     private suspend fun awaitAskIfSaveDialog(purpose: AskIfSaveDialogPurpose): Boolean {
         val project = project ?: return true
@@ -590,7 +609,7 @@ class AppState(
     }
 
     fun onCreateProject(project: Project, plugin: Plugin?, pluginParams: ParamMap?) {
-        trackProjectCreation(project, byIpcRequest = false)
+        trackProjectCreation(project)
         if (plugin != null) {
             trackTemplateGeneration(plugin, pluginParams)
         }
@@ -620,13 +639,13 @@ class AppState(
     }
 
     sealed class PendingActionAfterSaved {
-        object Open : PendingActionAfterSaved()
+        data object Open : PendingActionAfterSaved()
         class OpenCertain(val file: File) : PendingActionAfterSaved()
-        object Export : PendingActionAfterSaved()
+        data object Export : PendingActionAfterSaved()
         class ExportOverwrite(val all: Boolean) : PendingActionAfterSaved()
-        object Close : PendingActionAfterSaved()
-        object CreatingNew : PendingActionAfterSaved()
-        object ClearCaches : PendingActionAfterSaved()
-        object Exit : PendingActionAfterSaved()
+        data object Close : PendingActionAfterSaved()
+        data object CreatingNew : PendingActionAfterSaved()
+        data object ClearCaches : PendingActionAfterSaved()
+        data object Exit : PendingActionAfterSaved()
     }
 }

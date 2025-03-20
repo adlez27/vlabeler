@@ -8,6 +8,7 @@ import com.sdercolin.vlabeler.env.Log
 import com.sdercolin.vlabeler.model.AppConf
 import com.sdercolin.vlabeler.model.Project
 import com.sdercolin.vlabeler.model.SampleInfo
+import com.sdercolin.vlabeler.util.deleteRecursivelyLogged
 import com.sdercolin.vlabeler.util.findUnusedFile
 import com.sdercolin.vlabeler.util.getCacheDir
 import com.sdercolin.vlabeler.util.parseJson
@@ -59,7 +60,7 @@ object ChartRepository {
             cacheParamsFile.takeIf { it.exists() }?.readText()?.parseJson<ChartCacheParams>()
         }.getOrNull()
         if (existingCacheParams != cacheParams) {
-            cacheDirectory.deleteRecursively()
+            cacheDirectory.deleteRecursivelyLogged()
             cacheDirectory.mkdirs()
             cacheParamsFile.writeText(cacheParams.stringifyJson())
         }
@@ -91,6 +92,15 @@ object ChartRepository {
      */
     suspend fun getPowerGraph(sampleInfo: SampleInfo, channelIndex: Int, chunkIndex: Int): ImageBitmap {
         val file = getPowerGraphImageFile(sampleInfo, channelIndex, chunkIndex)
+        waitingFile(file)
+        return file.inputStream().buffered().use(::loadImageBitmap)
+    }
+
+    /**
+     * Get the fundamental image of a chunk
+     */
+    suspend fun getFundamentalGraph(sampleInfo: SampleInfo, chunkIndex: Int): ImageBitmap {
+        val file = getFundamentalGraphImageFile(sampleInfo, chunkIndex)
         waitingFile(file)
         return file.inputStream().buffered().use(::loadImageBitmap)
     }
@@ -134,6 +144,14 @@ object ChartRepository {
     ) {
         val file = getPowerGraphImageFile(sampleInfo, channelIndex, chunkIndex)
         saveImage(powerGraph, file, sampleInfo.getCacheKey(KEY_POWER_GRAPH, channelIndex, chunkIndex))
+    }
+
+    /**
+     * Put the fundamental graph image of a chunk.
+     */
+    fun putFundamentalGraph(sampleInfo: SampleInfo, chunkIndex: Int, fundamentalGraph: ImageBitmap) {
+        val file = getFundamentalGraphImageFile(sampleInfo, chunkIndex)
+        saveImage(fundamentalGraph, file, sampleInfo.getCacheKey(KEY_FUNDAMENTAL_GRAPH, chunkIndex))
     }
 
     private fun saveImage(image: ImageBitmap, file: File, cacheKey: String) {
@@ -199,7 +217,27 @@ object ChartRepository {
         ?.let { cacheDirectory.resolve(it) }
         ?.takeIf { it.isFile }
         ?: run {
-            val baseFileName = "${sampleInfo.name}_${KEY_POWER_GRAPH}_${channelIndex}_$chunkIndex.$EXTENSION"
+            val modulePrefix = sampleInfo.moduleName.let { "${it}_" }
+            val baseFileName =
+                "${modulePrefix}${sampleInfo.name}_${KEY_POWER_GRAPH}_${channelIndex}_$chunkIndex.$EXTENSION"
+            cacheDirectory.findUnusedFile(
+                base = baseFileName,
+                existingAbsolutePaths = cacheMap.values.map { cacheDirectory.resolve(it).absolutePath }.toSet(),
+            )
+        }
+
+    /**
+     * Get the target [File] for the fundamental graph image of a chunk.
+     */
+    fun getFundamentalGraphImageFile(
+        sampleInfo: SampleInfo,
+        chunkIndex: Int,
+    ) = cacheMap[sampleInfo.getCacheKey(KEY_FUNDAMENTAL_GRAPH, chunkIndex)]
+        ?.let { cacheDirectory.resolve(it) }
+        ?.takeIf { it.isFile }
+        ?: run {
+            val modulePrefix = sampleInfo.moduleName.let { "${it}_" }
+            val baseFileName = "${modulePrefix}${sampleInfo.name}_${KEY_FUNDAMENTAL_GRAPH}_$chunkIndex.$EXTENSION"
             cacheDirectory.findUnusedFile(
                 base = baseFileName,
                 existingAbsolutePaths = cacheMap.values.map { cacheDirectory.resolve(it).absolutePath }.toSet(),
@@ -212,23 +250,25 @@ object ChartRepository {
 
     fun clear(project: Project) {
         cacheMap.clear()
-        project.getCacheDir().resolve(CHARTS_CACHE_FOLDER_NAME).deleteRecursively()
+        project.getCacheDir().resolve(CHARTS_CACHE_FOLDER_NAME).deleteRecursivelyLogged()
     }
 
     /**
      * Move the cache from the old cache directory to the new cache directory.
      */
     fun moveTo(oldCacheDirectory: File, newCacheDirectory: File, clearOld: Boolean) {
+        Log.debug("Moving cache from $oldCacheDirectory to $newCacheDirectory")
         val oldDirectory = oldCacheDirectory.resolve(CHARTS_CACHE_FOLDER_NAME)
         if (oldDirectory.isDirectory.not()) return
         oldDirectory.copyRecursively(newCacheDirectory.resolve(CHARTS_CACHE_FOLDER_NAME), overwrite = true)
-        if (clearOld) oldDirectory.deleteRecursively()
+        if (clearOld) oldDirectory.deleteRecursivelyLogged()
     }
 
     private const val CHARTS_CACHE_FOLDER_NAME = "charts"
     private const val KEY_WAVEFORM = "waveform"
     private const val KEY_SPECTROGRAM = "spectrogram"
-    private const val KEY_POWER_GRAPH = "power_graph"
+    private const val KEY_POWER_GRAPH = "power"
+    private const val KEY_FUNDAMENTAL_GRAPH = "fundamental"
     private const val EXTENSION = "png"
 }
 

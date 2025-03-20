@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
-
 package com.sdercolin.vlabeler.model.key
 
-import androidx.compose.ui.ExperimentalComposeUiApi
 import com.sdercolin.vlabeler.env.isMacOS
 import com.sdercolin.vlabeler.model.action.ActionType
 
@@ -220,6 +217,6 @@ enum class Key(
     val isMainKey = mainKeyActionType != null
 
     companion object {
-        fun fromActualKey(actualKey: ActualKey): Key? = values().find { it.isKey(actualKey) }
+        fun fromActualKey(actualKey: ActualKey): Key? = entries.find { it.isKey(actualKey) }
     }
 }

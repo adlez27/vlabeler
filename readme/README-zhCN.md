@@ -2,7 +2,7 @@
 
 [![Discord](https://img.shields.io/discord/984044285584359444?style=for-the-badge&label=discord&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/yrTqG2SrRd)
 
-选择语言：[English](../README.md) | [简体中文](README-zhCN.md) | [日本語](README-ja.md)
+选择语言：[English](../README.md) | [简体中文](README-zhCN.md) | [日本語](README-ja.md) | [한국어](README-ko.md)
 
 `vLabeler` 是一个开源的语音标注应用程序，旨在提供：
 
@@ -123,6 +123,19 @@ vLabeler 的许多行为都依赖于可定制的 `标注器`。
 9. 点击菜单中的 `导出`，得到编辑后的标注文件
 
 如果您需要更多的自定义设置，请查看被折叠的`高级设置`，以及由标注器/模板生成器提供的设置。
+
+## 开始快捷编辑
+
+某些标注器支持 `快捷编辑` 功能，它允许您只使用单个文件或文件夹作为输入开始编辑。其他设置由标注器自动设置。
+
+您可以在开始页面的 `快捷编辑` 列表中点击项目，并选择文件或文件夹开始快捷编辑。
+
+在通过快捷编辑创建的项目中：
+
+- 默认情况下启用自动导出，这意味着当您保存项目时，标注文件会被自动保存
+- 重复使用快捷编辑时，项目文件可能会被静默地覆盖
+- 除非标注器的作者将某些设置配置为特定值以供快捷编辑使用，否则将使用保存的标注器设置
+- 您仍然可以在 `文件` -> `项目设置...` 中更改某些设置
 
 ## 可用的键盘/鼠标操作
 
@@ -338,7 +351,7 @@ aaa;name:bbb;sample:ccc;tag:ddd
 您可以点击 `新建项目` 页面的 `标注器` 选择框右边的 `齿轮` 按钮来打开标注器设置对话框。
 
 如果你想编辑一个 `vLabeler` 暂不支持的语音合成软件的标注文件，您可以自己编写一个标注器配置文件来实现它，而无需等待我们的开发（尽管需要一定的编程知识）。
-请查看 [Developer Custom Labelers](../docs/labeler-development.md) （英文）来了解如何开发一个标注器。
+请查看 [Develop Custom Labelers](../docs/labeler-development.md) （英文）来了解如何开发一个标注器。
 
 您可以在 `设置` -> `标注器...` 中导入自己的标注器。您也可以将自己编写的标注器分发给其他用户，或联系我们将其内置。
 

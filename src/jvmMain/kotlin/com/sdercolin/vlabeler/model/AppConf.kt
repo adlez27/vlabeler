@@ -19,6 +19,7 @@ import kotlinx.serialization.Serializable
  * @param editor Configurations about editor.
  * @param view Configurations about views.
  * @param autoSave Configurations about auto-save.
+ * @param autoReload Configurations about auto-reload.
  * @param playback Configurations about audio playback.
  * @param keymaps Custom keymap.
  * @param history Configurations about edit history (undo/redo).
@@ -31,6 +32,7 @@ data class AppConf(
     val editor: Editor = Editor(),
     val view: View = View(),
     val autoSave: AutoSave = AutoSave(),
+    val autoReload: AutoReload = AutoReload(),
     val playback: Playback = Playback(),
     val keymaps: Keymaps = Keymaps(),
     val history: History = History(),
@@ -53,13 +55,15 @@ data class AppConf(
         val amplitude: Amplitude = Amplitude(),
         val spectrogram: Spectrogram = Spectrogram(),
         val power: Power = Power(),
+        val fundamental: Fundamental = Fundamental(),
         val conversion: Conversion = Conversion(),
     ) {
         val amplitudeHeightRatio: Float
             get() = 1f /
                 (
                     1f + (if (spectrogram.enabled) spectrogram.heightWeight else 0f) +
-                        (if (power.enabled) power.heightWeight else 0f)
+                        (if (power.enabled) power.heightWeight else 0f) +
+                        (if (fundamental.enabled) fundamental.heightWeight else 0f)
                     )
 
         companion object {
@@ -97,11 +101,11 @@ data class AppConf(
      * Configurations about amplitude (waveforms) painting.
      *
      * @param resampleDownToHz Maximum sample rate for loading. If the audio has a higher sample rate, it will be
-     *     resampled down to this value. If set to 0, the original sample rate is used.
+     *    resampled down to this value. If set to 0, the original sample rate is used.
      * @param unitSize Frames of one pixel used when drawing the waveform.
      * @param intensityAccuracy Height of the container bitmap in pixel.
      * @param yAxisBlankRate Height rate of the extra blank region displayed in both top and bottom to the height of the
-     *     waveform.
+     *    waveform.
      * @param color Color of the waveform.
      * @param backgroundColor Background color of the waveform.
      */
@@ -141,10 +145,10 @@ data class AppConf(
      * @param heightWeight Height weight of the spectrogram to the amplitude form (whose weight is 1).
      * @param pointDensity Points drawn into one pixel.
      * @param standardHopSize Distance as the number of samples for which the window is slided when move to the next
-     *     frame. This value is used for cases with sample rate 48000 Hz. For other sample rates it is calculated
-     *     linear-proportionally.
+     *    frame. This value is used for cases with sample rate 48000 Hz. For other sample rates it is calculated
+     *    linear-proportionally.
      * @param standardWindowSize Number of samples in the window. This value is used for cases with sample rate 48000
-     *     Hz. For other sample rates it is calculated exponential-proportionally (base is 2).
+     *    Hz. For other sample rates it is calculated exponential-proportionally (base is 2).
      * @param windowType Window type used in the Short-Time FT. See [WindowType] for options.
      * @param melScaleStep Step of the mel scale for interpolation on the frequency axis.
      * @param maxFrequency Max frequency (Hz) displayed.
@@ -152,7 +156,7 @@ data class AppConf(
      * @param maxIntensity Max intensity (dB) displayed in the heatmap.
      * @param colorPalette Color palette name used in the heatmap. See [ColorPaletteDefinition] for details.
      * @param useHighAlphaContrast True if the alpha value of the color is used repeatedly in the heatmap, so that the
-     *     heatmap looks more contrasted. Only color palettes with alpha values are affected.
+     *    heatmap looks more contrasted. Only color palettes with alpha values are affected.
      */
     @Serializable
     @Immutable
@@ -252,6 +256,53 @@ data class AppConf(
 
     @Serializable
     @Immutable
+    data class Fundamental(
+        val enabled: Boolean = DEFAULT_ENABLED,
+        val heightWeight: Float = DEFAULT_HEIGHT_WEIGHT,
+        val semitoneResolution: Int = DEFAULT_SEMITONE_RESOLUTION,
+        val minFundamental: Float = DEFAULT_MIN_FUNDAMENTAL,
+        val maxFundamental: Float = DEFAULT_MAX_FUNDAMENTAL,
+        val semitoneSampleNum: Int = DEFAULT_SEMITONE_SAMPLE_NUM,
+        val maxHarmonicFrequency: Float = DEFAULT_MAX_HARMONIC_FREQUENCY,
+        // hidden to users
+        val erbsStep: Float = DEFAULT_ERBS_STEP,
+        // hidden to users
+        val minDisplayCorr: Float = DEFAULT_MIN_DISPLAY_CORR,
+        // hidden to users
+        val maxDisplayCorr: Float = DEFAULT_MAX_DISPLAY_CORR,
+        val drawReferenceLine: Boolean = DEFAULT_DRAW_REFERENCE_LINE,
+        val color: String = DEFAULT_COLOR,
+        val referenceLineColor: String = DEFAULT_REFERENCE_LINE_COLOR,
+        val backgroundColor: String = DEFAULT_BACKGROUND_COLOR,
+    ) {
+        companion object {
+            const val DEFAULT_ENABLED = false
+            const val DEFAULT_HEIGHT_WEIGHT = 0.5f
+            const val MAX_HEIGHT_WEIGHT = 5f
+            const val MIN_HEIGHT_WEIGHT = 0.1f
+            const val DEFAULT_SEMITONE_RESOLUTION = 8
+            const val MIN_SEMITONE_RESOLUTION = 1
+            const val MAX_SEMITONE_RESOLUTION = 64
+            const val DEFAULT_MIN_FUNDAMENTAL = 130.0f // C3
+            const val DEFAULT_MAX_FUNDAMENTAL = 880.0f // A5
+            const val MIN_FUNDAMENTAL = 16.351f // C0
+            const val MAX_FUNDAMENTAL = 8372.0f // C9
+            const val DEFAULT_SEMITONE_SAMPLE_NUM = 8
+            const val MAX_SEMITONE_SAMPLE_NUM = 16
+            const val DEFAULT_MAX_HARMONIC_FREQUENCY = 5000.0f
+            const val MAX_MAX_HARMONIC_FREQUENCY = 22050.0f
+            const val DEFAULT_ERBS_STEP = 0.1f
+            const val DEFAULT_MIN_DISPLAY_CORR = 0.0f
+            const val DEFAULT_MAX_DISPLAY_CORR = 0.5f
+            const val DEFAULT_DRAW_REFERENCE_LINE = true
+            const val DEFAULT_COLOR = "#FFFFC500"
+            const val DEFAULT_REFERENCE_LINE_COLOR = "#FF555555"
+            const val DEFAULT_BACKGROUND_COLOR = "#00000000"
+        }
+    }
+
+    @Serializable
+    @Immutable
     enum class WindowType {
         Hamming,
         Hanning,
@@ -289,7 +340,9 @@ data class AppConf(
      * @param scissorsColor Color hex string of the scissors' cursor position.
      * @param scissorsActions Actions taken with a successful scissors click.
      * @param useOnScreenScissors When true, the scissors process is handled on screen. Otherwise, it is handled in a
-     *     dialog. Only effective when [Project.multipleEditMode] is true.
+     *    dialog. Only effective when [Project.multipleEditMode] is true.
+     * @param scissorsSubmitThreshold The dp number of the threshold to submit the scissors' cut after a click, when
+     *    [useOnScreenScissors] is true.
      * @param autoScroll Timings when `scroll to editable area` is automatically conducted.
      * @param showDone When true, the done button/icon is shown in the editor and entry lists.
      * @param showStar When true, the star button/icon is shown in the editor and entry lists.
@@ -304,6 +357,7 @@ data class AppConf(
         val scissorsColor: String = DEFAULT_SCISSORS_COLOR,
         val scissorsActions: ScissorsActions = ScissorsActions(),
         val useOnScreenScissors: Boolean = DEFAULT_USE_ON_SCREEN_SCISSORS,
+        val scissorsSubmitThreshold: Int = DEFAULT_SCISSORS_SUBMIT_THRESHOLD,
         val autoScroll: AutoScroll = AutoScroll(),
         val lockedDrag: LockedDrag = DEFAULT_LOCKED_DRAG,
         val lockedSettingParameterWithCursor: Boolean = DEFAULT_LOCKED_SETTING_PARAMETER_WITH_CURSOR,
@@ -336,6 +390,9 @@ data class AppConf(
             const val DEFAULT_PLAYER_CURSOR_COLOR = "#FFFF00"
             const val DEFAULT_SCISSORS_COLOR = "#FFFFFF00"
             const val DEFAULT_USE_ON_SCREEN_SCISSORS = true
+            const val DEFAULT_SCISSORS_SUBMIT_THRESHOLD = 10
+            const val MIN_SCISSORS_SUBMIT_THRESHOLD = 1
+            const val MAX_SCISSORS_SUBMIT_THRESHOLD = 50
             val DEFAULT_LOCKED_DRAG = LockedDrag.UseLabeler
             const val DEFAULT_LOCKED_SETTING_PARAMETER_WITH_CURSOR = true
             const val DEFAULT_SHOW_DONE = true
@@ -383,7 +440,7 @@ data class AppConf(
         }
 
         companion object {
-            val DEFAULT_GO_TO = Target.Former
+            val DEFAULT_GO_TO = Target.Latter
             val DEFAULT_ASK_FOR_NAME = Target.Former
             val DEFAULT_PLAY = Target.Former
         }
@@ -563,7 +620,7 @@ data class AppConf(
      * @param onLoadedNewSample True if the action is conducted when a new sample file is loaded.
      * @param onJumpedToEntry True if the action is conducted when jumped to an entry via entry list.
      * @param onSwitchedInMultipleEditMode True if action is conducted in multiple edit mode when switch to another.
-     *     entry.
+     *    entry.
      * @param onSwitched True if action is conducted when switched to another entry.
      */
     @Serializable
@@ -628,6 +685,45 @@ data class AppConf(
         }
     }
 
+    @Serializable
+    @Immutable
+    data class AutoReload(
+        val behavior: Behavior = DEFAULT_BEHAVIOR,
+    ) {
+
+        /**
+         * Behavior of the auto-reload.
+         */
+        @Serializable
+        @Immutable
+        enum class Behavior(override val stringKey: Strings) : LocalizedText {
+
+            /**
+             * Do not conduct auto-reload.
+             */
+            Disabled(Strings.PreferencesAutoReloadBehaviorDisabled),
+
+            /**
+             * Ask the user whether to reload with a preview.
+             */
+            AskWithDetails(Strings.PreferencesAutoReloadBehaviorAskWithDetails),
+
+            /**
+             * Ask the user whether to reload.
+             */
+            Ask(Strings.PreferencesAutoReloadBehaviorAsk),
+
+            /**
+             * Reload without asking.
+             */
+            Auto(Strings.PreferencesAutoReloadBehaviorAuto),
+        }
+
+        companion object {
+            val DEFAULT_BEHAVIOR = Behavior.Ask
+        }
+    }
+
     /**
      * Configurations about playback.
      *
@@ -684,7 +780,7 @@ data class AppConf(
      *
      * @param maxSize Max size of the edit history.
      * @param squashIndex Ignore changes that only contain different [Project.currentModuleIndex]s or
-     *     [Module.currentIndex]s.
+     *    [Module.currentIndex]s.
      */
     @Serializable
     @Immutable
